@@ -21,11 +21,7 @@
   *{box-sizing:border-box;}
   body{ color:var(--text); font-family:'Inter',sans-serif; }
 
-  #wz-root{
-    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
-    border-radius:0; padding:0; max-width:480px; margin:0 auto; overflow:hidden;
-    min-height:100vh;
-  }
+  #wz-root{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; max-width:480px; margin:0 auto; overflow:hidden; min-height:100vh; }
 
   .wz-header{ padding:22px 22px 18px; display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid var(--border);}
   .wz-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; letter-spacing:-0.01em;}
@@ -33,6 +29,7 @@
   .wz-sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); display:inline-block; }
   .wz-sync-dot.offline{ background:var(--danger); }
   .wz-date{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:right; padding-top:3px;}
+  #wz-settings-btn{ background:none; border:none; color:var(--border); font-size:14px; cursor:pointer; padding:4px 0; opacity:0.7; }
 
   .wz-hero{ display:flex; align-items:center; gap:18px; padding:22px; background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);}
   .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none;}
@@ -50,6 +47,7 @@
   .wz-stat-value.signal{ color:var(--signal);}
 
   .wz-section-label{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); padding:0 22px; margin-bottom:10px; margin-top:4px; display:flex; justify-content:space-between; align-items:center;}
+  .wz-section-label button{ background:none;border:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:0; }
 
   .wz-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 22px 20px;}
   .wz-tarif-btn{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 12px; text-align:left; cursor:pointer; transition:transform .12s ease; color:var(--text); font-family:'Inter',sans-serif;}
@@ -60,10 +58,14 @@
   .wz-log{ padding:0 22px 8px; max-height:220px; overflow-y:auto;}
   .wz-log-empty{ color:var(--muted); font-size:12.5px; padding:10px 0; text-align:center;}
   .wz-log-item{ display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--surface); border-radius:10px; margin-bottom:7px; font-size:12.5px;}
+  .wz-log-item.selected{ background:var(--signal-dim); outline:1px solid var(--signal); }
   .wz-log-left{ display:flex; align-items:center; gap:9px;}
   .wz-log-time{ font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:11px;}
   .wz-log-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--amber);}
   .wz-log-del{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px 6px; border-radius:6px;}
+  .wz-log-checkbox{ width:17px; height:17px; accent-color:var(--signal); cursor:pointer; flex:none; }
+
+  #wz-select-bar{ display:none; padding:0 22px 14px; gap:10px; }
 
   .wz-goals{ padding:0 22px 20px;}
   .wz-goal-row{ margin-bottom:12px;}
@@ -72,6 +74,13 @@
   .wz-goal-bar-bg{ height:6px; background:var(--surface-2); border-radius:99px; overflow:hidden;}
   .wz-goal-bar-fg{ height:100%; background:var(--signal); border-radius:99px; transition:width .3s ease;}
   .wz-goal-bar-fg.full{ background:var(--amber);}
+  .wz-goal-label{ font-size:11px; color:var(--muted); display:block; margin-bottom:5px; }
+  .wz-goal-input{ width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:14px; padding:10px 12px; margin-bottom:14px; outline:none;}
+  .wz-goal-input:focus{ border-color:var(--signal); }
+
+  .wz-chart-wrap{ padding:0 22px 20px; }
+  #wz-chart-trend.up{ color:var(--signal); }
+  #wz-chart-trend.down{ color:var(--danger); }
 
   .wz-footer{ display:flex; gap:10px; padding:16px 22px 32px; border-top:1px solid var(--border);}
   .wz-btn{ flex:1; padding:11px 14px; border-radius:12px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer;}
@@ -85,6 +94,40 @@
   .wz-lock-sub{ color:var(--muted); font-size:12.5px; margin-top:-8px;}
   .wz-lock-input{ font-family:'JetBrains Mono',monospace; font-size:22px; letter-spacing:0.3em; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text); padding:12px; width:140px; outline:none;}
   .wz-lock-error{ color:var(--danger); font-size:12px; height:14px;}
+
+  .wz-modal-overlay{ position:fixed; inset:0; background:rgba(8,12,20,0.88); display:none; align-items:flex-end; z-index:60; }
+  .wz-modal-overlay.center{ align-items:center; }
+  .wz-modal-overlay.show{ display:flex; }
+  .wz-modal-panel{ background:var(--surface); border-top:1px solid var(--border); border-radius:18px 18px 0 0; width:100%; max-width:480px; margin:0 auto; max-height:85vh; display:flex; flex-direction:column; padding:18px 0 0; }
+  .wz-modal-overlay.center .wz-modal-panel{ border-radius:18px; max-width:320px; margin:0 20px; width:auto; }
+  .wz-modal-head{ display:flex; align-items:center; justify-content:space-between; padding:0 20px 12px; border-bottom:1px solid var(--border);}
+  .wz-modal-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;}
+  .wz-modal-close{ background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:2px 8px;}
+  .wz-modal-body{ overflow-y:auto; padding:14px 20px 20px;}
+  .wz-modal-empty{ color:var(--muted); font-size:12.5px; text-align:center; padding:24px 0;}
+
+  .wz-day-group{ background:var(--surface-2); border-radius:12px; margin-bottom:9px; overflow:hidden;}
+  .wz-day-head{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; cursor:pointer;}
+  .wz-day-date{ font-size:13px; font-weight:600;}
+  .wz-day-count{ font-size:11px; color:var(--muted); margin-top:2px;}
+  .wz-day-total{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--amber); font-size:13.5px;}
+  .wz-day-detail{ display:none; padding:0 14px 12px;}
+  .wz-day-detail.open{ display:block;}
+  .wz-day-ticket{ display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-top:1px dashed var(--border); color:var(--muted);}
+  .wz-day-ticket span:last-child{ font-family:'JetBrains Mono',monospace; color:var(--text);}
+
+  .wz-period-btn{ display:block; width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; text-align:left; padding:13px 16px; margin-bottom:9px; cursor:pointer;}
+  .wz-period-btn:last-child{ margin-bottom:0;}
+
+  .wz-lock-btn{ background:var(--signal-dim); border:1px solid var(--signal); color:var(--signal); font-family:'Inter',sans-serif; font-weight:600; font-size:13px; padding:10px 26px; border-radius:10px; cursor:pointer;}
+
+  .wz-qty-row{ display:flex; align-items:center; justify-content:space-between; padding:11px 12px; background:var(--surface-2); border-radius:12px; margin-bottom:8px;}
+  .wz-qty-info{ display:flex; flex-direction:column;}
+  .wz-qty-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px;}
+  .wz-qty-name{ font-size:11px; color:var(--muted); margin-top:1px;}
+  .wz-qty-stepper{ display:flex; align-items:center; gap:10px;}
+  .wz-qty-btn{ width:28px; height:28px; border-radius:8px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;}
+  .wz-qty-value{ font-family:'JetBrains Mono',monospace; min-width:16px; text-align:center; font-size:13.5px;}
 </style>
 </head>
 <body>
@@ -102,7 +145,10 @@
       <div class="wz-title">CHILL Wi-Fi Zone</div>
       <div class="wz-sub"><span class="wz-sync-dot" id="wz-sync-dot"></span><span id="wz-sync-text">Synchronisé</span></div>
     </div>
-    <div class="wz-date" id="wz-date"></div>
+    <div style="text-align:right;">
+      <div class="wz-date" id="wz-date"></div>
+      <button id="wz-settings-btn">⚙</button>
+    </div>
   </div>
 
   <div class="wz-hero">
@@ -124,23 +170,140 @@
     </div>
   </div>
 
-  <div class="wz-section-label"><span>Objectifs</span></div>
+  <div class="wz-section-label">
+    <span>Objectifs</span>
+    <button id="wz-goals-edit">✎ Modifier</button>
+  </div>
   <div class="wz-goals" id="wz-goals"></div>
 
-  <div class="wz-section-label"><span>Enregistrer une vente</span></div>
+  <div class="wz-section-label">
+    <span id="wz-chart-trend" style="font-family:'JetBrains Mono',monospace;"></span>
+  </div>
+  <div class="wz-chart-wrap">
+    <div id="wz-chart-svg"></div>
+    <div id="wz-chart-legend" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="wz-section-label">
+    <span>Enregistrer une vente</span>
+    <button id="wz-backdate-btn">🕐 Date antérieure</button>
+  </div>
   <div class="wz-grid" id="wz-tarifs"></div>
 
-  <div class="wz-section-label"><span>Aujourd'hui</span></div>
+  <div class="wz-section-label">
+    <span>Aujourd'hui</span>
+    <button id="wz-select-toggle">☑ Sélectionner</button>
+  </div>
   <div class="wz-log" id="wz-log"></div>
+  <div id="wz-select-bar">
+    <button class="wz-btn" id="wz-select-cancel" style="flex:1;">Annuler</button>
+    <button class="wz-btn" id="wz-select-delete" style="flex:2;background:rgba(239,100,97,0.14);border-color:var(--danger);color:var(--danger);">Supprimer (<span id="wz-select-count">0</span>)</button>
+  </div>
 
   <div class="wz-footer">
-    <button class="wz-btn" id="wz-undo">↩ Annuler dernière</button>
+    <button class="wz-btn" id="wz-history-btn">📅 Historique</button>
+    <button class="wz-btn" id="wz-export">CSV</button>
+    <button class="wz-btn primary" id="wz-export-pdf">PDF</button>
+  </div>
+</div>
+
+<!-- Modal Paramètres -->
+<div class="wz-modal-overlay center" id="wz-settings-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title">Paramètres</div><button class="wz-modal-close" id="wz-settings-modal-close">✕</button></div>
+    <div class="wz-modal-body">
+      <button class="wz-period-btn" id="wz-code-settings-btn">🔑 Code de l'app</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal changer code -->
+<div class="wz-modal-overlay center" id="wz-code-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title">Code de l'app</div><button class="wz-modal-close" id="wz-code-modal-close">✕</button></div>
+    <div class="wz-modal-body">
+      <label class="wz-goal-label">Code actuel</label>
+      <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-code-current" style="letter-spacing:0.3em;text-align:center;">
+      <label class="wz-goal-label">Nouveau code (4 chiffres)</label>
+      <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-code-new" style="letter-spacing:0.3em;text-align:center;">
+      <label class="wz-goal-label">Confirmer</label>
+      <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-code-confirm" style="letter-spacing:0.3em;text-align:center;">
+      <div class="wz-lock-error" id="wz-code-error" style="text-align:left;margin-bottom:6px;"></div>
+      <button class="wz-lock-btn" id="wz-code-save" style="width:100%;">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Historique -->
+<div class="wz-modal-overlay" id="wz-history-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title">Historique des ventes</div><button class="wz-modal-close" id="wz-history-close">✕</button></div>
+    <div class="wz-modal-body" id="wz-history-body"></div>
+  </div>
+</div>
+
+<!-- Modal Export -->
+<div class="wz-modal-overlay" id="wz-export-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title" id="wz-export-modal-title">Exporter</div><button class="wz-modal-close" id="wz-export-modal-close">✕</button></div>
+    <div class="wz-modal-body">
+      <button class="wz-period-btn" data-period="today">Aujourd'hui</button>
+      <button class="wz-period-btn" data-period="week">Cette semaine</button>
+      <button class="wz-period-btn" data-period="month">Ce mois</button>
+      <button class="wz-period-btn" data-period="year">Cette année</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Objectifs -->
+<div class="wz-modal-overlay" id="wz-goals-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title">Modifier les objectifs</div><button class="wz-modal-close" id="wz-goals-modal-close">✕</button></div>
+    <div class="wz-modal-body">
+      <label class="wz-goal-label">Objectif jour (Ar)</label>
+      <input type="number" inputmode="numeric" class="wz-goal-input" id="wz-goal-day-input">
+      <label class="wz-goal-label">Objectif semaine (Ar)</label>
+      <input type="number" inputmode="numeric" class="wz-goal-input" id="wz-goal-week-input">
+      <label class="wz-goal-label">Objectif mois (Ar)</label>
+      <input type="number" inputmode="numeric" class="wz-goal-input" id="wz-goal-month-input">
+      <button class="wz-lock-btn" id="wz-goals-save" style="width:100%;">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmation suppression -->
+<div class="wz-modal-overlay center" id="wz-confirm-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-body" style="padding:22px 20px;">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin-bottom:8px;">Supprimer ?</div>
+      <div id="wz-confirm-detail" style="color:var(--muted);font-size:12.5px;margin-bottom:16px;">Cette action est définitive.</div>
+      <div style="display:flex;gap:10px;">
+        <button class="wz-btn" id="wz-confirm-cancel" style="flex:1;">Annuler</button>
+        <button class="wz-btn" id="wz-confirm-ok" style="flex:1;background:rgba(239,100,97,0.14);border-color:var(--danger);color:var(--danger);">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal vente antérieure -->
+<div class="wz-modal-overlay" id="wz-backdate-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title">Ajouter une vente antérieure</div><button class="wz-modal-close" id="wz-backdate-close">✕</button></div>
+    <div class="wz-modal-body">
+      <label class="wz-goal-label">Date</label>
+      <input type="date" class="wz-goal-input" id="wz-backdate-date">
+      <label class="wz-goal-label">Heure</label>
+      <input type="time" class="wz-goal-input" id="wz-backdate-time">
+      <div class="wz-section-label" style="padding:0 0 8px;"><span>Tarifs</span></div>
+      <div id="wz-backdate-qty"></div>
+      <button class="wz-lock-btn" id="wz-backdate-add" style="width:100%;margin-top:8px;">Ajouter</button>
+    </div>
   </div>
 </div>
 
 <div class="wz-toast" id="wz-toast"></div>
 
-<!-- Firebase -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -160,8 +323,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const salesCol = collection(db, "sales");
+const configCol = collection(db, "config");
+const codeDocRef = doc(db, "config", "appCode");
+const goalsDocRef = doc(db, "config", "goals");
 
-const APP_CODE = "2200"; // change-le ici si besoin
+let APP_CODE = "2200";
+let GOALS = { day: 10000, week: 50000, month: 200000 };
 
 const TARIFS = [
   { label: "1 heure", amount: 500, color: "#F43F5E" },
@@ -169,7 +336,7 @@ const TARIFS = [
   { label: "24 heures", amount: 2000, color: "#7C9EFF" },
   { label: "1 mois", amount: 20000, color: "#F472B6" }
 ];
-const GOALS = { day: 10000, week: 50000, month: 200000 };
+const CHART_TARIFS = TARIFS.filter(t => t.label !== "1 mois");
 
 function colorForLabel(label){ const t = TARIFS.find(x=>x.label===label); return t? t.color : 'var(--signal)'; }
 function fmt(n){ return n.toLocaleString('fr-FR').replace(/,/g,' ') + " Ar"; }
@@ -218,9 +385,9 @@ TARIFS.forEach(t=>{
   tarifsEl.appendChild(btn);
 });
 
-async function addSale(t){
+async function addSale(t, atTime){
   try{
-    await addDoc(salesCol, { label:t.label, amount:t.amount, ts: Timestamp.now() });
+    await addDoc(salesCol, { label:t.label, amount:t.amount, ts: atTime ? Timestamp.fromDate(atTime) : Timestamp.now() });
     toast(`+ ${fmt(t.amount)} enregistré`);
   }catch(e){ toast("Erreur réseau — réessaie"); }
 }
@@ -231,9 +398,8 @@ async function undoLast(){
   try{ await deleteDoc(doc(db,"sales", lastSaleId)); toast("Dernière vente annulée"); }
   catch(e){ toast("Erreur — réessaie"); }
 }
-document.getElementById('wz-undo').onclick = undoLast;
 
-// --- Sync temps réel ---
+// --- Sync temps réel : ventes ---
 const syncDot = document.getElementById('wz-sync-dot');
 const syncText = document.getElementById('wz-sync-text');
 let sales = [];
@@ -252,6 +418,18 @@ onSnapshot(q, (snap)=>{
   syncDot.classList.add('offline');
   syncText.textContent = 'Hors ligne';
 });
+
+// --- Sync config (code + objectifs) ---
+onSnapshot(codeDocRef, (snap)=>{
+  if(snap.exists() && snap.data().value) APP_CODE = snap.data().value;
+}, ()=>{});
+onSnapshot(goalsDocRef, (snap)=>{
+  if(snap.exists()){
+    const d = snap.data();
+    GOALS = { day: d.day||10000, week: d.week||50000, month: d.month||200000 };
+    render();
+  }
+}, ()=>{});
 
 window.addEventListener('online', ()=>{ syncDot.classList.remove('offline'); syncText.textContent='Synchronisé'; });
 window.addEventListener('offline', ()=>{ syncDot.classList.add('offline'); syncText.textContent='Hors ligne'; });
@@ -279,19 +457,8 @@ function render(){
   arc.setAttribute('stroke-dashoffset', circumference*(1-pct));
   arc.setAttribute('stroke', pct>=1 ? 'var(--amber)' : 'var(--signal)');
 
-  const goalsEl = document.getElementById('wz-goals');
-  const rows = [
-    {label:"Aujourd'hui", total:todayTotal, goal:GOALS.day},
-    {label:"Cette semaine", total:weekTotal, goal:GOALS.week},
-    {label:"Ce mois", total:monthTotal, goal:GOALS.month}
-  ];
-  goalsEl.innerHTML = rows.map(r=>{
-    const p = r.goal>0 ? Math.min(r.total/r.goal,1) : 0;
-    return `<div class="wz-goal-row">
-      <div class="wz-goal-top"><span>${r.label}</span><strong>${fmt(r.total)} / ${fmt(r.goal)}</strong></div>
-      <div class="wz-goal-bar-bg"><div class="wz-goal-bar-fg${p>=1?' full':''}" style="width:${Math.round(p*100)}%"></div></div>
-    </div>`;
-  }).join('');
+  renderGoals(todayTotal, weekTotal, monthTotal);
+  renderChart();
 
   const logEl = document.getElementById('wz-log');
   if(todaySales.length===0){
@@ -300,32 +467,411 @@ function render(){
     logEl.innerHTML = '';
     todaySales.forEach(s=>{
       const row = document.createElement('div');
-      row.className = 'wz-log-item';
+      row.className = 'wz-log-item' + (selectedIds.has(s.id) ? ' selected' : '');
+      row.dataset.id = s.id;
       const time = new Date(s.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
       const dot = `<span style="width:8px;height:8px;border-radius:50%;background:${colorForLabel(s.label)};flex:none;display:inline-block;"></span>`;
-      row.innerHTML = `
-        <div class="wz-log-left">${dot}<span class="wz-log-time">${time}</span><span>${s.label}</span></div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="wz-log-amount" style="color:${colorForLabel(s.label)};">${fmt(s.amount)}</span>
-          <button class="wz-log-del" data-id="${s.id}">✕</button>
-        </div>`;
+      const leftHtml = selectionMode
+        ? `<input type="checkbox" class="wz-log-checkbox" data-id="${s.id}" ${selectedIds.has(s.id)?'checked':''}>${dot}<span class="wz-log-time">${time}</span><span>${s.label}</span>`
+        : `${dot}<span class="wz-log-time">${time}</span><span>${s.label}</span>`;
+      const rightHtml = selectionMode
+        ? `<span class="wz-log-amount" style="color:${colorForLabel(s.label)};">${fmt(s.amount)}</span>`
+        : `<span class="wz-log-amount" style="color:${colorForLabel(s.label)};">${fmt(s.amount)}</span><button class="wz-log-del" data-id="${s.id}">✕</button>`;
+      row.innerHTML = `<div class="wz-log-left">${leftHtml}</div><div style="display:flex;align-items:center;gap:8px;">${rightHtml}</div>`;
       logEl.appendChild(row);
     });
-    logEl.querySelectorAll('.wz-log-del').forEach(b=>{
-      b.onclick = async ()=>{
-        try{ await deleteDoc(doc(db,"sales", b.dataset.id)); toast("Ticket supprimé"); }
-        catch(e){ toast("Erreur — réessaie"); }
-      };
-    });
+    if(selectionMode){
+      logEl.querySelectorAll('.wz-log-checkbox').forEach(cb=>{ cb.onclick=(e)=>{e.stopPropagation(); toggleSelect(cb.dataset.id);}; });
+      logEl.querySelectorAll('.wz-log-item').forEach(row=>{ row.onclick=()=>toggleSelect(row.dataset.id); });
+    } else {
+      logEl.querySelectorAll('.wz-log-del').forEach(b=>{ b.onclick=()=>askDeleteConfirm(b.dataset.id); });
+    }
   }
 }
 
-// --- Service worker (installation + cache basique) ---
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+function renderGoals(todayTotal, weekTotal, monthTotal){
+  const el = document.getElementById('wz-goals');
+  const rows = [
+    {label:"Aujourd'hui", total:todayTotal, goal:GOALS.day},
+    {label:"Cette semaine", total:weekTotal, goal:GOALS.week},
+    {label:"Ce mois", total:monthTotal, goal:GOALS.month}
+  ];
+  el.innerHTML = rows.map(r=>{
+    const p = r.goal>0 ? Math.min(r.total/r.goal,1) : 0;
+    return `<div class="wz-goal-row">
+      <div class="wz-goal-top"><span>${r.label}</span><strong>${fmt(r.total)} / ${fmt(r.goal)}</strong></div>
+      <div class="wz-goal-bar-bg"><div class="wz-goal-bar-fg${p>=1?' full':''}" style="width:${Math.round(p*100)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderChart(){
+  const trendEl = document.getElementById('wz-chart-trend');
+  const svgWrap = document.getElementById('wz-chart-svg');
+  const legendEl = document.getElementById('wz-chart-legend');
+
+  const now = new Date();
+  const daysInMonthSoFar = now.getDate();
+  const days = [];
+  for(let i=daysInMonthSoFar-1;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  const series = CHART_TARIFS.map(t=>{
+    let cum=0;
+    return days.map(d=>{
+      const dayTotal = sales.filter(s=>s.ts.slice(0,10)===d && s.label===t.label).reduce((a,s)=>a+s.amount,0);
+      cum += dayTotal;
+      return cum;
+    });
   });
+
+  const maxVal = Math.max(1, ...series.flat());
+  const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
+  const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
+  const xFor = i => padL + (days.length>1 ? (i/(days.length-1))*plotW : 0);
+  const yFor = v => padT + plotH - (v/maxVal)*plotH;
+
+  const gridLines = [0,0.25,0.5,0.75,1].map(f=>{
+    const y = padT+plotH-f*plotH;
+    return `<line x1="${padL}" y1="${y}" x2="${svgW-padR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+  }).join('');
+  const yLabels = [0,0.5,1].map(f=>{
+    const y = padT+plotH-f*plotH; const val=Math.round(f*maxVal);
+    const label = val>=1000 ? Math.round(val/1000)+'k' : val;
+    return `<text x="${padL-6}" y="${y+3}" font-size="8" fill="var(--muted)" text-anchor="end" font-family="'JetBrains Mono', monospace">${label}</text>`;
+  }).join('');
+  const dayLabels = days.map((d,i)=>{
+    if(i%3!==0 && i!==days.length-1) return '';
+    const lbl = new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<text x="${xFor(i)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${lbl}</text>`;
+  }).join('');
+  const polylines = series.map((vals,idx)=>{
+    const points = vals.map((v,i)=>`${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`).join(' ');
+    return `<polyline points="${points}" fill="none" stroke="${CHART_TARIFS[idx].color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }).join('');
+
+  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${polylines}${dayLabels}${yLabels}</svg>`;
+  legendEl.innerHTML = CHART_TARIFS.map(t=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);margin-right:14px;margin-bottom:4px;"><span style="width:11px;height:3px;border-radius:2px;background:${t.color};display:inline-block;"></span>${t.label}</span>`).join('');
+
+  const weekStart = startOfWeekISO();
+  const thisWeekTotal = sales.filter(s=>s.ts>=weekStart).reduce((a,s)=>a+s.amount,0);
+  const prevWeekStartDate = new Date(weekStart);
+  prevWeekStartDate.setDate(prevWeekStartDate.getDate()-7);
+  const prevWeekStart = prevWeekStartDate.toISOString();
+  const prevWeekTotal = sales.filter(s=>s.ts>=prevWeekStart && s.ts<weekStart).reduce((a,s)=>a+s.amount,0);
+
+  trendEl.className='';
+  if(thisWeekTotal===0 && prevWeekTotal===0){ trendEl.textContent='Pas encore assez de données'; }
+  else if(prevWeekTotal===0){ trendEl.textContent='📈 Nouvelle activité'; trendEl.className='up'; }
+  else{
+    const pct = Math.round(((thisWeekTotal-prevWeekTotal)/prevWeekTotal)*100);
+    trendEl.textContent = (pct>=0?'📈 +':'📉 ')+pct+'% vs sem. dernière';
+    trendEl.className = pct>=0?'up':'down';
+  }
+}
+
+// --- Sélection multiple ---
+let selectionMode = false;
+let selectedIds = new Set();
+const selectBar = document.getElementById('wz-select-bar');
+const selectToggleBtn = document.getElementById('wz-select-toggle');
+function toggleSelect(id){
+  if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+  document.getElementById('wz-select-count').textContent = selectedIds.size;
+  render();
+}
+function exitSelectionMode(){
+  selectionMode=false; selectedIds=new Set();
+  selectBar.style.display='none';
+  selectToggleBtn.textContent='☑ Sélectionner';
+  render();
+}
+selectToggleBtn.onclick = ()=>{
+  if(selectionMode) exitSelectionMode();
+  else{
+    selectionMode=true; selectedIds=new Set();
+    selectBar.style.display='flex';
+    document.getElementById('wz-select-count').textContent='0';
+    selectToggleBtn.textContent='✕ Annuler';
+    render();
+  }
+};
+document.getElementById('wz-select-cancel').onclick = exitSelectionMode;
+document.getElementById('wz-select-delete').onclick = ()=>{
+  if(selectedIds.size===0){ toast("Aucun ticket sélectionné"); return; }
+  askBulkDeleteConfirm(Array.from(selectedIds));
+};
+
+// --- Confirmation suppression ---
+let pendingDeleteIds = [];
+const confirmModal = document.getElementById('wz-confirm-modal');
+const confirmDetailEl = document.getElementById('wz-confirm-detail');
+function askDeleteConfirm(id){
+  pendingDeleteIds=[id];
+  confirmDetailEl.textContent="Cette action est définitive.";
+  confirmModal.classList.add('show');
+}
+function askBulkDeleteConfirm(ids){
+  pendingDeleteIds=ids.slice();
+  confirmDetailEl.textContent=`${ids.length} ticket${ids.length>1?'s':''} seront supprimés.`;
+  confirmModal.classList.add('show');
+}
+document.getElementById('wz-confirm-cancel').onclick = ()=>{ pendingDeleteIds=[]; confirmModal.classList.remove('show'); };
+confirmModal.onclick = (e)=>{ if(e.target===confirmModal){ pendingDeleteIds=[]; confirmModal.classList.remove('show'); } };
+document.getElementById('wz-confirm-ok').onclick = async ()=>{
+  try{
+    for(const id of pendingDeleteIds){ await deleteDoc(doc(db,"sales",id)); }
+    toast(pendingDeleteIds.length>1 ? `${pendingDeleteIds.length} tickets supprimés` : "Ticket supprimé");
+  }catch(e){ toast("Erreur — réessaie"); }
+  pendingDeleteIds=[];
+  confirmModal.classList.remove('show');
+  exitSelectionMode();
+};
+
+// --- Undo (bouton retiré du footer mais fonction gardée si besoin) ---
+
+// --- Paramètres / code app ---
+const settingsModal = document.getElementById('wz-settings-modal');
+document.getElementById('wz-settings-btn').onclick = ()=> settingsModal.classList.add('show');
+document.getElementById('wz-settings-modal-close').onclick = ()=> settingsModal.classList.remove('show');
+settingsModal.onclick = (e)=>{ if(e.target===settingsModal) settingsModal.classList.remove('show'); };
+
+const codeModal = document.getElementById('wz-code-modal');
+document.getElementById('wz-code-settings-btn').onclick = ()=>{
+  settingsModal.classList.remove('show');
+  document.getElementById('wz-code-current').value='';
+  document.getElementById('wz-code-new').value='';
+  document.getElementById('wz-code-confirm').value='';
+  document.getElementById('wz-code-error').textContent='';
+  codeModal.classList.add('show');
+};
+document.getElementById('wz-code-modal-close').onclick = ()=> codeModal.classList.remove('show');
+codeModal.onclick = (e)=>{ if(e.target===codeModal) codeModal.classList.remove('show'); };
+document.getElementById('wz-code-save').onclick = async ()=>{
+  const cur = document.getElementById('wz-code-current').value;
+  const next = document.getElementById('wz-code-new').value;
+  const conf = document.getElementById('wz-code-confirm').value;
+  const errEl = document.getElementById('wz-code-error');
+  if(cur !== APP_CODE){ errEl.textContent="Code actuel incorrect"; return; }
+  if(!/^\d{4}$/.test(next)){ errEl.textContent="Le nouveau code doit avoir 4 chiffres"; return; }
+  if(next !== conf){ errEl.textContent="Les codes ne correspondent pas"; return; }
+  try{
+    await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js").then(m=>m.setDoc(codeDocRef, { value: next }));
+    APP_CODE = next;
+    codeModal.classList.remove('show');
+    toast("Code mis à jour");
+  }catch(e){ errEl.textContent="Erreur réseau — réessaie"; }
+};
+
+// --- Objectifs ---
+const goalsModal = document.getElementById('wz-goals-modal');
+document.getElementById('wz-goals-edit').onclick = ()=>{
+  document.getElementById('wz-goal-day-input').value = GOALS.day;
+  document.getElementById('wz-goal-week-input').value = GOALS.week;
+  document.getElementById('wz-goal-month-input').value = GOALS.month;
+  goalsModal.classList.add('show');
+};
+document.getElementById('wz-goals-modal-close').onclick = ()=> goalsModal.classList.remove('show');
+goalsModal.onclick = (e)=>{ if(e.target===goalsModal) goalsModal.classList.remove('show'); };
+document.getElementById('wz-goals-save').onclick = async ()=>{
+  const day = parseInt(document.getElementById('wz-goal-day-input').value,10)||0;
+  const week = parseInt(document.getElementById('wz-goal-week-input').value,10)||0;
+  const month = parseInt(document.getElementById('wz-goal-month-input').value,10)||0;
+  try{
+    await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js").then(m=>m.setDoc(goalsDocRef, { day, week, month }));
+    goalsModal.classList.remove('show');
+    toast("Objectifs mis à jour");
+  }catch(e){ toast("Erreur réseau — réessaie"); }
+};
+
+// --- Historique ---
+const historyModal = document.getElementById('wz-history-modal');
+document.getElementById('wz-history-btn').onclick = ()=>{ renderHistory(); historyModal.classList.add('show'); };
+document.getElementById('wz-history-close').onclick = ()=> historyModal.classList.remove('show');
+historyModal.onclick = (e)=>{ if(e.target===historyModal) historyModal.classList.remove('show'); };
+
+function renderHistory(){
+  const body = document.getElementById('wz-history-body');
+  const today = todayStr();
+  const byDay = {};
+  sales.forEach(s=>{
+    const d = s.ts.slice(0,10);
+    if(d===today) return;
+    if(!byDay[d]) byDay[d]=[];
+    byDay[d].push(s);
+  });
+  const days = Object.keys(byDay).sort((a,b)=>b.localeCompare(a));
+  if(days.length===0){ body.innerHTML='<div class="wz-modal-empty">Pas encore de jours précédents enregistrés</div>'; return; }
+  body.innerHTML='';
+  days.forEach(d=>{
+    const tickets = byDay[d];
+    const total = tickets.reduce((a,s)=>a+s.amount,0);
+    const dateLabel = new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    const group = document.createElement('div');
+    group.className='wz-day-group';
+    group.innerHTML = `
+      <div class="wz-day-head" data-day="${d}">
+        <div><div class="wz-day-date">${dateLabel}</div><div class="wz-day-count">${tickets.length} ticket${tickets.length>1?'s':''}</div></div>
+        <div class="wz-day-total">${fmt(total)}</div>
+      </div>
+      <div class="wz-day-detail" id="wz-day-detail-${d}">
+        ${tickets.map(t=>{
+          const time = new Date(t.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+          const dot = `<span style="width:7px;height:7px;border-radius:50%;background:${colorForLabel(t.label)};display:inline-block;margin-right:6px;"></span>`;
+          return `<div class="wz-day-ticket"><span>${dot}${time} — ${t.label}</span><span>${fmt(t.amount)}</span></div>`;
+        }).join('')}
+      </div>`;
+    body.appendChild(group);
+  });
+  body.querySelectorAll('.wz-day-head').forEach(head=>{
+    head.onclick = ()=>{ document.getElementById('wz-day-detail-'+head.dataset.day).classList.toggle('open'); };
+  });
+}
+
+// --- Vente à date antérieure ---
+let backdateQty = {};
+function renderBackdateQty(){
+  const el = document.getElementById('wz-backdate-qty');
+  el.innerHTML = TARIFS.map(t=>{
+    const qty = backdateQty[t.label]||0;
+    return `<div class="wz-qty-row" style="border-left:3px solid ${t.color};">
+      <div class="wz-qty-info"><span class="wz-qty-amount" style="color:${t.color};">${fmt(t.amount)}</span><span class="wz-qty-name">${t.label}</span></div>
+      <div class="wz-qty-stepper">
+        <button class="wz-qty-btn" data-action="dec" data-label="${t.label}">−</button>
+        <span class="wz-qty-value">${qty}</span>
+        <button class="wz-qty-btn" data-action="inc" data-label="${t.label}">+</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.wz-qty-btn').forEach(b=>{
+    b.onclick = ()=>{
+      const label=b.dataset.label; const cur=backdateQty[label]||0;
+      if(b.dataset.action==='inc') backdateQty[label]=cur+1;
+      else backdateQty[label]=Math.max(0,cur-1);
+      renderBackdateQty();
+    };
+  });
+}
+const backdateModal = document.getElementById('wz-backdate-modal');
+document.getElementById('wz-backdate-btn').onclick = ()=>{
+  document.getElementById('wz-backdate-date').value = todayStr();
+  document.getElementById('wz-backdate-date').max = todayStr();
+  document.getElementById('wz-backdate-time').value = '12:00';
+  backdateQty = {};
+  renderBackdateQty();
+  backdateModal.classList.add('show');
+};
+document.getElementById('wz-backdate-close').onclick = ()=> backdateModal.classList.remove('show');
+backdateModal.onclick = (e)=>{ if(e.target===backdateModal) backdateModal.classList.remove('show'); };
+document.getElementById('wz-backdate-add').onclick = async ()=>{
+  const entries = Object.entries(backdateQty).filter(([,qty])=>qty>0);
+  if(entries.length===0){ toast("Choisissez au moins un ticket"); return; }
+  const dateVal = document.getElementById('wz-backdate-date').value;
+  const timeVal = document.getElementById('wz-backdate-time').value || '12:00';
+  if(!dateVal){ toast("Choisissez une date"); return; }
+  const baseTs = new Date(`${dateVal}T${timeVal}:00`);
+  let count=0, total=0;
+  try{
+    for(const [label,qty] of entries){
+      const t = TARIFS.find(x=>x.label===label);
+      for(let i=0;i<qty;i++){
+        const ts = new Date(baseTs.getTime()+count*1000);
+        await addSale(t, ts);
+        total += t.amount; count++;
+      }
+    }
+    backdateModal.classList.remove('show');
+    const dateLabel = new Date(dateVal+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    toast(`${count} ticket${count>1?'s':''} (${fmt(total)}) pour le ${dateLabel}`);
+  }catch(e){ toast("Erreur réseau — réessaie"); }
+};
+
+// --- Export CSV / PDF ---
+const PERIOD_LABELS = { today:"Aujourd'hui", week:"Cette semaine", month:"Ce mois", year:"Cette année" };
+function filterByPeriod(period){
+  if(period==='today') return sales.filter(s=>s.ts.slice(0,10)===todayStr());
+  if(period==='week'){ const start=startOfWeekISO(); return sales.filter(s=>s.ts>=start); }
+  if(period==='month') return sales.filter(s=>s.ts.slice(0,7)===monthStr());
+  if(period==='year'){ const year=new Date().getFullYear().toString(); return sales.filter(s=>s.ts.slice(0,4)===year); }
+  return sales.slice();
+}
+function slugForPeriod(period){
+  if(period==='today') return todayStr();
+  if(period==='week') return 'semaine-'+todayStr();
+  if(period==='month') return monthStr();
+  if(period==='year') return new Date().getFullYear().toString();
+  return todayStr();
+}
+function generateCSV(list, period){
+  let csv = "Date,Heure,Tarif,Montant (Ar)\n";
+  list.slice().sort((a,b)=>a.ts.localeCompare(b.ts)).forEach(s=>{
+    const d = new Date(s.ts);
+    csv += `${d.toISOString().slice(0,10)},${d.toLocaleTimeString('fr-FR')},${s.label},${s.amount}\n`;
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `chill-wifi-zone-${slugForPeriod(period)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast("CSV téléchargé");
+}
+function generatePDF(list, period){
+  if(!window.jspdf){ toast("Erreur : librairie PDF non chargée"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc_ = new jsPDF();
+  const total = list.reduce((a,s)=>a+s.amount,0);
+  doc_.setFont('helvetica','bold'); doc_.setFontSize(16);
+  doc_.text('CHILL Wi-Fi Zone — Suivi des ventes', 14, 18);
+  doc_.setFont('helvetica','normal'); doc_.setFontSize(10);
+  doc_.text(`Période : ${PERIOD_LABELS[period]||'Toutes les ventes'}`, 14, 25);
+  doc_.text(`Exporté le ${new Date().toLocaleDateString('fr-FR')}`, 14, 31);
+  doc_.text(`Total : ${fmt(total)}  (${list.length} ticket${list.length>1?'s':''})`, 14, 37);
+  let y=49;
+  doc_.setFont('helvetica','bold'); doc_.setFontSize(11);
+  doc_.text('Date',14,y); doc_.text('Heure',54,y); doc_.text('Tarif',84,y); doc_.text('Montant',150,y);
+  y+=4; doc_.setLineWidth(0.2); doc_.line(14,y,196,y); y+=6;
+  doc_.setFont('helvetica','normal'); doc_.setFontSize(10);
+  const sorted = list.slice().sort((a,b)=>b.ts.localeCompare(a.ts));
+  sorted.forEach(s=>{
+    if(y>280){ doc_.addPage(); y=20; }
+    const d = new Date(s.ts);
+    doc_.text(d.toISOString().slice(0,10),14,y);
+    doc_.text(d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),54,y);
+    doc_.text(s.label,84,y);
+    doc_.text(fmt(s.amount),150,y);
+    y+=6;
+  });
+  doc_.save(`chill-wifi-zone-${slugForPeriod(period)}.pdf`);
+  toast("PDF téléchargé");
+}
+let exportFormat = null;
+const exportModal = document.getElementById('wz-export-modal');
+function openExportModal(format){
+  exportFormat = format;
+  document.getElementById('wz-export-modal-title').textContent = format==='csv' ? 'Exporter en CSV' : 'Exporter en PDF';
+  exportModal.classList.add('show');
+}
+document.getElementById('wz-export').onclick = ()=> openExportModal('csv');
+document.getElementById('wz-export-pdf').onclick = ()=> openExportModal('pdf');
+document.getElementById('wz-export-modal-close').onclick = ()=> exportModal.classList.remove('show');
+exportModal.onclick = (e)=>{ if(e.target===exportModal) exportModal.classList.remove('show'); };
+exportModal.querySelectorAll('.wz-period-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    const period = btn.dataset.period;
+    const list = filterByPeriod(period);
+    if(list.length===0){ toast("Rien à exporter pour cette période"); return; }
+    if(exportFormat==='csv') generateCSV(list, period);
+    else generatePDF(list, period);
+    exportModal.classList.remove('show');
+  };
+});
+
+// --- Service worker ---
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
 </body>
-</html>
+        </html>
