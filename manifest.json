@@ -1,6 +1,6 @@
 {
   "name": "CHILL Wi-Fi Zone",
-  "short_name": "Chill",
+  "short_name": "Chillax",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0F1521",
