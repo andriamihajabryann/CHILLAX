@@ -186,7 +186,6 @@
 
   <div class="wz-section-label">
     <span>Enregistrer une vente</span>
-    <button id="wz-backdate-btn">🕐 Date antérieure</button>
   </div>
   <div class="wz-grid" id="wz-tarifs"></div>
 
@@ -213,6 +212,7 @@
     <div class="wz-modal-head"><div class="wz-modal-title">Paramètres</div><button class="wz-modal-close" id="wz-settings-modal-close">✕</button></div>
     <div class="wz-modal-body">
       <button class="wz-period-btn" id="wz-code-settings-btn">🔑 Code de l'app</button>
+      <button class="wz-period-btn" id="wz-backdate-btn">🕐 Date antérieure</button>
     </div>
   </div>
 </div>
@@ -755,25 +755,37 @@ function renderBackdateQty(){
   });
 }
 const backdateModal = document.getElementById('wz-backdate-modal');
+function syncBackdateQtyFromDate(){
+  const dateVal = document.getElementById('wz-backdate-date').value;
+  backdateQty = {};
+  sales.filter(s=>s.ts.slice(0,10)===dateVal).forEach(s=>{
+    backdateQty[s.label] = (backdateQty[s.label]||0) + 1;
+  });
+  renderBackdateQty();
+}
 document.getElementById('wz-backdate-btn').onclick = ()=>{
+  settingsModal.classList.remove('show');
   document.getElementById('wz-backdate-date').value = todayStr();
   document.getElementById('wz-backdate-date').max = todayStr();
   document.getElementById('wz-backdate-time').value = '12:00';
-  backdateQty = {};
-  renderBackdateQty();
+  syncBackdateQtyFromDate();
   backdateModal.classList.add('show');
 };
+document.getElementById('wz-backdate-date').addEventListener('change', syncBackdateQtyFromDate);
 document.getElementById('wz-backdate-close').onclick = ()=> backdateModal.classList.remove('show');
 backdateModal.onclick = (e)=>{ if(e.target===backdateModal) backdateModal.classList.remove('show'); };
 document.getElementById('wz-backdate-add').onclick = async ()=>{
   const entries = Object.entries(backdateQty).filter(([,qty])=>qty>0);
-  if(entries.length===0){ toast("Choisissez au moins un ticket"); return; }
   const dateVal = document.getElementById('wz-backdate-date').value;
   const timeVal = document.getElementById('wz-backdate-time').value || '12:00';
   if(!dateVal){ toast("Choisissez une date"); return; }
   const baseTs = new Date(`${dateVal}T${timeVal}:00`);
-  let count=0, total=0;
   try{
+    // Écrase : supprime d'abord tous les tickets existants de ce jour
+    const existing = sales.filter(s=>s.ts.slice(0,10)===dateVal);
+    for(const s of existing){ await deleteDoc(doc(db,"sales", s.id)); }
+
+    let count=0, total=0;
     for(const [label,qty] of entries){
       const t = TARIFS.find(x=>x.label===label);
       for(let i=0;i<qty;i++){
@@ -784,7 +796,8 @@ document.getElementById('wz-backdate-add').onclick = async ()=>{
     }
     backdateModal.classList.remove('show');
     const dateLabel = new Date(dateVal+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-    toast(`${count} ticket${count>1?'s':''} (${fmt(total)}) pour le ${dateLabel}`);
+    const replacedTxt = existing.length>0 ? ` (${existing.length} remplacé${existing.length>1?'s':''})` : '';
+    toast(count>0 ? `${count} ticket${count>1?'s':''} (${fmt(total)}) pour le ${dateLabel}${replacedTxt}` : `Ventes du ${dateLabel} effacées`);
   }catch(e){ toast("Erreur réseau — réessaie"); }
 };
 
@@ -874,4 +887,4 @@ if('serviceWorker' in navigator){
 }
 </script>
 </body>
-        </html>
+  </html>
