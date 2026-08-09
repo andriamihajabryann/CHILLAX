@@ -1,1410 +1,331 @@
-<!-- Suivi Zone Wifi -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0F1521">
+<title>CHILL Wi-Fi Zone</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
+  html,body{margin:0;padding:0;background:#0F1521;}
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap');
 
   :root{
-    --bg:#0F1521;
-    --surface:#17202E;
-    --surface-2:#1F2B3D;
-    --signal:#5EEAD4;
-    --signal-dim:rgba(94,234,212,0.14);
-    --amber:#F5A623;
-    --amber-dim:rgba(245,166,35,0.14);
-    --text:#E8EDF2;
-    --muted:#7E8FA3;
-    --danger:#EF6461;
-    --border:#25334A;
+    --bg:#0F1521; --surface:#17202E; --surface-2:#1F2B3D;
+    --signal:#5EEAD4; --signal-dim:rgba(94,234,212,0.14);
+    --amber:#F5A623; --amber-dim:rgba(245,166,35,0.14);
+    --text:#E8EDF2; --muted:#7E8FA3; --danger:#EF6461; --border:#25334A;
   }
+  *{box-sizing:border-box;}
+  body{ color:var(--text); font-family:'Inter',sans-serif; }
 
   #wz-root{
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    border-radius:20px;
-    padding:0;
-    max-width:480px;
-    margin:0 auto;
-    overflow:hidden;
-    box-shadow:0 1px 0 rgba(255,255,255,0.03) inset;
-  }
-  #wz-root *{box-sizing:border-box;}
-
-  .wz-header{
-    padding:22px 22px 18px;
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    border-bottom:1px solid var(--border);
-  }
-  .wz-title{
-    font-family:'Space Grotesk',sans-serif;
-    font-weight:700;
-    font-size:20px;
-    letter-spacing:-0.01em;
-  }
-  .wz-sub{
-    color:var(--muted);
-    font-size:12.5px;
-    margin-top:4px;
-  }
-  .wz-date{
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    color:var(--muted);
-    text-align:right;
-    padding-top:3px;
+    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+    border-radius:0; padding:0; max-width:480px; margin:0 auto; overflow:hidden;
+    min-height:100vh;
   }
 
-  .wz-hero{
-    display:flex;
-    align-items:center;
-    gap:18px;
-    padding:22px;
-    background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);
-  }
-  .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none; }
-  .wz-arc-wrap svg{ transform:rotate(-90deg); }
-  .wz-arc-center{
-    position:absolute; inset:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-  }
-  .wz-arc-pct{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; color:var(--signal); }
-  .wz-arc-label{ font-size:9px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-top:2px; }
+  .wz-header{ padding:22px 22px 18px; display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid var(--border);}
+  .wz-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; letter-spacing:-0.01em;}
+  .wz-sub{ color:var(--muted); font-size:12.5px; margin-top:4px; display:flex; align-items:center; gap:6px;}
+  .wz-sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); display:inline-block; }
+  .wz-sync-dot.offline{ background:var(--danger); }
+  .wz-date{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:right; padding-top:3px;}
 
-  .wz-hero-stats{ flex:1; min-width:0; }
-  .wz-stat-row{ display:flex; justify-content:space-between; padding:5px 0; }
-  .wz-stat-row + .wz-stat-row{ border-top:1px dashed var(--border); }
-  .wz-stat-label{ font-size:12px; color:var(--muted); }
-  .wz-stat-value{ font-family:'JetBrains Mono',monospace; font-size:13.5px; font-weight:700; }
-  .wz-stat-value.amber{ color:var(--amber); }
-  .wz-stat-value.signal{ color:var(--signal); }
+  .wz-hero{ display:flex; align-items:center; gap:18px; padding:22px; background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);}
+  .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none;}
+  .wz-arc-wrap svg{ transform:rotate(-90deg);}
+  .wz-arc-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .wz-arc-pct{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; color:var(--signal);}
+  .wz-arc-label{ font-size:9px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; margin-top:2px;}
 
-  .wz-section-label{
-    font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);
-    padding:0 22px; margin-bottom:10px; margin-top:4px;
-  }
+  .wz-hero-stats{ flex:1; min-width:0;}
+  .wz-stat-row{ display:flex; justify-content:space-between; padding:5px 0;}
+  .wz-stat-row + .wz-stat-row{ border-top:1px dashed var(--border);}
+  .wz-stat-label{ font-size:12px; color:var(--muted);}
+  .wz-stat-value{ font-family:'JetBrains Mono',monospace; font-size:13.5px; font-weight:700;}
+  .wz-stat-value.amber{ color:var(--amber);}
+  .wz-stat-value.signal{ color:var(--signal);}
 
-  .wz-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:10px;
-    padding:0 22px 20px;
-  }
-  .wz-tarif-btn{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:14px 12px;
-    text-align:left;
-    cursor:pointer;
-    transition:transform .12s ease, border-color .12s ease, background .12s ease;
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-  }
-  .wz-tarif-btn:hover{ border-color:var(--signal); background:var(--surface-2); }
-  .wz-tarif-btn:active{ transform:scale(0.97); }
-  .wz-tarif-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; color:var(--signal); }
-  .wz-tarif-name{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .wz-section-label{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); padding:0 22px; margin-bottom:10px; margin-top:4px; display:flex; justify-content:space-between; align-items:center;}
 
-  .wz-log{
-    padding:0 22px 8px;
-    max-height:180px;
-    overflow-y:auto;
-  }
-  .wz-log-empty{ color:var(--muted); font-size:12.5px; padding:10px 0; text-align:center; }
-  .wz-log-item{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:9px 12px;
-    background:var(--surface);
-    border-radius:10px;
-    margin-bottom:7px;
-    font-size:12.5px;
-  }
-  .wz-log-left{ display:flex; align-items:center; gap:9px; }
-  .wz-log-time{ font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:11px; }
-  .wz-log-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--amber); }
-  .wz-log-del{
-    background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px;
-    padding:2px 6px; border-radius:6px;
-  }
-  .wz-log-del:hover{ color:var(--danger); background:rgba(239,100,97,0.1); }
+  .wz-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 22px 20px;}
+  .wz-tarif-btn{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 12px; text-align:left; cursor:pointer; transition:transform .12s ease; color:var(--text); font-family:'Inter',sans-serif;}
+  .wz-tarif-btn:active{ transform:scale(0.97);}
+  .wz-tarif-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; color:var(--signal);}
+  .wz-tarif-name{ font-size:11.5px; color:var(--muted); margin-top:3px;}
 
-  .wz-log-checkbox{ width:17px; height:17px; accent-color:var(--signal); cursor:pointer; flex:none; }
-  .wz-log-item.selected{ background:var(--signal-dim); outline:1px solid var(--signal); }
+  .wz-log{ padding:0 22px 8px; max-height:220px; overflow-y:auto;}
+  .wz-log-empty{ color:var(--muted); font-size:12.5px; padding:10px 0; text-align:center;}
+  .wz-log-item{ display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--surface); border-radius:10px; margin-bottom:7px; font-size:12.5px;}
+  .wz-log-left{ display:flex; align-items:center; gap:9px;}
+  .wz-log-time{ font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:11px;}
+  .wz-log-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--amber);}
+  .wz-log-del{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px 6px; border-radius:6px;}
 
-  .wz-footer{
-    display:flex; gap:10px;
-    padding:16px 22px 22px;
-    border-top:1px solid var(--border);
-  }
-  .wz-btn{
-    flex:1;
-    padding:11px 14px;
-    border-radius:12px;
-    border:1px solid var(--border);
-    background:var(--surface);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    font-size:12.5px;
-    font-weight:600;
-    cursor:pointer;
-  }
-  .wz-btn.primary{
-    background:var(--amber-dim);
-    border-color:var(--amber);
-    color:var(--amber);
-  }
-  .wz-btn:hover{ filter:brightness(1.15); }
+  .wz-goals{ padding:0 22px 20px;}
+  .wz-goal-row{ margin-bottom:12px;}
+  .wz-goal-top{ display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; color:var(--muted); margin-bottom:5px;}
+  .wz-goal-top strong{ font-family:'JetBrains Mono',monospace; color:var(--text); font-weight:700; font-size:12px;}
+  .wz-goal-bar-bg{ height:6px; background:var(--surface-2); border-radius:99px; overflow:hidden;}
+  .wz-goal-bar-fg{ height:100%; background:var(--signal); border-radius:99px; transition:width .3s ease;}
+  .wz-goal-bar-fg.full{ background:var(--amber);}
 
-  .wz-toast{
-    position:absolute; left:50%; bottom:14px; transform:translateX(-50%) translateY(10px);
-    background:var(--signal); color:#0F1521; font-weight:600; font-size:12px;
-    padding:8px 14px; border-radius:999px; opacity:0; pointer-events:none;
-    transition:opacity .2s ease, transform .2s ease;
-  }
-  .wz-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .wz-footer{ display:flex; gap:10px; padding:16px 22px 32px; border-top:1px solid var(--border);}
+  .wz-btn{ flex:1; padding:11px 14px; border-radius:12px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .wz-btn.primary{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber);}
 
-  #wz-shell{ position:relative; }
+  .wz-toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(10px); background:var(--signal); color:#0F1521; font-weight:600; font-size:12px; padding:8px 14px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:999;}
+  .wz-toast.show{ opacity:1; transform:translateX(-50%) translateY(0);}
 
-  .wz-history-toggle{
-    width:100%;
-    background:none;
-    border:none;
-    border-bottom:1px solid var(--border);
-    color:var(--muted);
-    font-family:'Inter',sans-serif;
-    font-size:12px;
-    font-weight:600;
-    padding:10px 22px;
-    text-align:left;
-    cursor:pointer;
-  }
-  .wz-history-toggle:hover{ color:var(--signal); }
-
-  .wz-modal-overlay{
-    position:absolute; inset:0;
-    background:rgba(8,12,20,0.88);
-    backdrop-filter:blur(2px);
-    display:none;
-    align-items:flex-end;
-    z-index:20;
-    border-radius:20px;
-  }
-  .wz-modal-overlay.show{ display:flex; }
-  .wz-modal-panel{
-    background:var(--surface);
-    border-top:1px solid var(--border);
-    border-radius:18px 18px 0 0;
-    width:100%;
-    max-height:85%;
-    display:flex;
-    flex-direction:column;
-    padding:18px 0 0;
-  }
-  .wz-modal-head{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 20px 12px;
-    border-bottom:1px solid var(--border);
-  }
-  .wz-modal-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
-  .wz-modal-close{
-    background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer;
-    padding:2px 8px;
-  }
-  .wz-modal-close:hover{ color:var(--text); }
-  .wz-modal-body{ overflow-y:auto; padding:14px 20px 20px; }
-  .wz-modal-empty{ color:var(--muted); font-size:12.5px; text-align:center; padding:24px 0; }
-
-  .wz-day-group{
-    background:var(--surface-2);
-    border-radius:12px;
-    margin-bottom:9px;
-    overflow:hidden;
-  }
-  .wz-day-head{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:12px 14px;
-    cursor:pointer;
-  }
-  .wz-day-date{ font-size:13px; font-weight:600; }
-  .wz-day-count{ font-size:11px; color:var(--muted); margin-top:2px; }
-  .wz-day-total{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--amber); font-size:13.5px; }
-  .wz-day-detail{ display:none; padding:0 14px 12px; }
-  .wz-day-detail.open{ display:block; }
-  .wz-day-ticket{
-    display:flex; justify-content:space-between;
-    font-size:12px; padding:6px 0;
-    border-top:1px dashed var(--border);
-    color:var(--muted);
-  }
-  .wz-day-ticket span:last-child{ font-family:'JetBrains Mono',monospace; color:var(--text); }
-
-  .wz-period-btn{
-    display:block;
-    width:100%;
-    background:var(--surface-2);
-    border:1px solid var(--border);
-    border-radius:12px;
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    font-size:13.5px;
-    font-weight:600;
-    text-align:left;
-    padding:13px 16px;
-    margin-bottom:9px;
-    cursor:pointer;
-  }
-  .wz-period-btn:hover{ border-color:var(--signal); background:var(--signal-dim); }
-  .wz-period-btn:last-child{ margin-bottom:0; }
-
-  .wz-goals{ padding:0 22px 20px; }
-  .wz-goal-row{ margin-bottom:12px; }
-  .wz-goal-row:last-child{ margin-bottom:0; }
-  .wz-goal-top{
-    display:flex; justify-content:space-between; align-items:baseline;
-    font-size:11.5px; color:var(--muted); margin-bottom:5px;
-  }
-  .wz-goal-top strong{ font-family:'JetBrains Mono',monospace; color:var(--text); font-weight:700; font-size:12px; }
-  .wz-goal-bar-bg{ height:6px; background:var(--surface-2); border-radius:99px; overflow:hidden; }
-  .wz-goal-bar-fg{ height:100%; background:var(--signal); border-radius:99px; transition:width .3s ease; }
-  .wz-goal-bar-fg.full{ background:var(--amber); }
-
-  .wz-goal-label{ font-size:11px; color:var(--muted); display:block; margin-bottom:5px; }
-  .wz-goal-input{
-    width:100%;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    color:var(--text);
-    font-family:'JetBrains Mono',monospace;
-    font-size:14px;
-    padding:10px 12px;
-    margin-bottom:14px;
-    outline:none;
-  }
-  .wz-goal-input:focus{ border-color:var(--signal); }
-
-  .wz-chart-wrap{ padding:0 22px 20px; }
-  .wz-chart-bars{
-    display:flex; align-items:flex-end; gap:4px;
-    height:88px;
-    padding-top:6px;
-  }
-  .wz-chart-bar-col{
-    flex:1; min-width:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-    height:100%;
-  }
-  .wz-chart-bar{
-    width:100%; max-width:16px;
-    border-radius:4px 4px 0 0;
-    background:var(--signal);
-    opacity:0.45;
-    transition:height .3s ease;
-  }
-  .wz-chart-bar.today{ opacity:1; background:var(--amber); }
-  .wz-chart-day-label{
-    font-size:8.5px; color:var(--muted);
-    margin-top:5px;
-    font-family:'JetBrains Mono',monospace;
-  }
-  #wz-chart-trend.up{ color:var(--signal); }
-  #wz-chart-trend.down{ color:var(--danger); }
-
-  .wz-qty-row{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:11px 12px;
-    background:var(--surface-2);
-    border-radius:12px;
-    margin-bottom:8px;
-  }
-  .wz-qty-info{ display:flex; flex-direction:column; }
-  .wz-qty-amount{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; }
-  .wz-qty-name{ font-size:11px; color:var(--muted); margin-top:1px; }
-  .wz-qty-stepper{ display:flex; align-items:center; gap:10px; }
-  .wz-qty-btn{
-    width:28px; height:28px; border-radius:8px;
-    background:var(--surface); border:1px solid var(--border);
-    color:var(--text); font-size:16px; font-weight:700;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    line-height:1;
-  }
-  .wz-qty-btn:active{ transform:scale(0.94); }
-  .wz-qty-value{ font-family:'JetBrains Mono',monospace; min-width:16px; text-align:center; font-size:13.5px; }
-
-  .wz-lock{
-    position:absolute; inset:0;
-    background:var(--bg);
-    border-radius:20px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:16px;
-    z-index:50;
-    padding:30px;
-    text-align:center;
-  }
-  .wz-lock-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; }
-  .wz-lock-sub{ color:var(--muted); font-size:12.5px; margin-top:-8px; }
-  .wz-lock-input{
-    font-family:'JetBrains Mono',monospace;
-    font-size:22px;
-    letter-spacing:0.3em;
-    text-align:center;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:12px;
-    color:var(--text);
-    padding:12px;
-    width:140px;
-    outline:none;
-  }
-  .wz-lock-input:focus{ border-color:var(--signal); }
-  .wz-lock-error{ color:var(--danger); font-size:12px; height:14px; }
-  .wz-lock-btn{
-    background:var(--signal-dim);
-    border:1px solid var(--signal);
-    color:var(--signal);
-    font-family:'Inter',sans-serif;
-    font-weight:600;
-    font-size:13px;
-    padding:10px 26px;
-    border-radius:10px;
-    cursor:pointer;
-  }
+  .wz-lock{ position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:50; padding:30px; text-align:center;}
+  .wz-lock-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;}
+  .wz-lock-sub{ color:var(--muted); font-size:12.5px; margin-top:-8px;}
+  .wz-lock-input{ font-family:'JetBrains Mono',monospace; font-size:22px; letter-spacing:0.3em; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text); padding:12px; width:140px; outline:none;}
+  .wz-lock-error{ color:var(--danger); font-size:12px; height:14px;}
 </style>
+</head>
+<body>
 
-<div id="wz-shell">
-  <div class="wz-lock" id="wz-lock">
-    <div class="wz-lock-title">🔒 CHILL Wi-Fi Zone</div>
-    <div class="wz-lock-sub">Entrez le code pour accéder au suivi</div>
-    <input type="password" inputmode="numeric" maxlength="4" class="wz-lock-input" id="wz-lock-input" placeholder="••••">
-    <div class="wz-lock-error" id="wz-lock-error"></div>
-  </div>
-
-  <div id="wz-root">
-    <div class="wz-header">
-      <div>
-        <div class="wz-title">CHILL Wi-Fi Zone</div>
-        <div class="wz-sub">Suivi des ventes</div>
-      </div>
-      <div style="text-align:right;">
-        <div class="wz-date" id="wz-date"></div>
-        <button id="wz-settings-btn" style="background:none; border:none; color:var(--border); font-size:14px; cursor:pointer; padding:4px 0; opacity:0.6;">⚙</button>
-      </div>
-    </div>
-
-    <div class="wz-hero">
-      <div class="wz-arc-wrap">
-        <svg width="112" height="112" viewBox="0 0 112 112">
-          <circle cx="56" cy="56" r="48" fill="none" stroke="var(--surface-2)" stroke-width="9"/>
-          <circle id="wz-arc-fg" cx="56" cy="56" r="48" fill="none" stroke="var(--signal)" stroke-width="9"
-                  stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6"/>
-        </svg>
-        <div class="wz-arc-center">
-          <div class="wz-arc-pct" id="wz-pct">0%</div>
-          <div class="wz-arc-label">Objectif</div>
-        </div>
-      </div>
-      <div class="wz-hero-stats">
-        <div class="wz-stat-row">
-          <div class="wz-stat-label">Aujourd'hui</div>
-          <div class="wz-stat-value signal" id="wz-today">0 Ar</div>
-        </div>
-        <div class="wz-stat-row">
-          <div class="wz-stat-label">Cette semaine</div>
-          <div class="wz-stat-value signal" id="wz-week">0 Ar</div>
-        </div>
-        <div class="wz-stat-row">
-          <div class="wz-stat-label">Ce mois</div>
-          <div class="wz-stat-value amber" id="wz-month">0 Ar</div>
-        </div>
-        <div class="wz-stat-row">
-          <div class="wz-stat-label">Reste pour 200 000 Ar</div>
-          <div class="wz-stat-value" id="wz-remain">200 000 Ar</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="wz-section-label" style="display:flex;justify-content:space-between;align-items:center;">
-      <span>Objectifs</span>
-      <button id="wz-goals-edit" style="background:none;border:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:0;">✎ Modifier</button>
-    </div>
-    <div class="wz-goals" id="wz-goals"></div>
-
-    <div class="wz-section-label" style="display:flex;justify-content:flex-start;align-items:baseline;">
-      <span id="wz-chart-trend" style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);"></span>
-    </div>
-    <div class="wz-chart-wrap">
-      <div id="wz-chart-svg"></div>
-      <div id="wz-chart-legend" style="margin-top:8px;"></div>
-    </div>
-
-    <div class="wz-section-label" style="display:flex;justify-content:space-between;align-items:center;">
-      <span>Enregistrer une vente</span>
-      <button id="wz-backdate-btn" style="background:none;border:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:0;">🕐 Date antérieure</button>
-    </div>
-    <div class="wz-grid" id="wz-tarifs"></div>
-
-    <div class="wz-section-label" style="display:flex;justify-content:space-between;align-items:center;">
-      <span>Aujourd'hui</span>
-      <button id="wz-select-toggle" style="background:none;border:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;padding:0;">☑ Sélectionner</button>
-    </div>
-    <div class="wz-log" id="wz-log"></div>
-    <div id="wz-select-bar" style="display:none; padding:0 22px 14px; gap:10px;">
-      <button class="wz-btn" id="wz-select-cancel" style="flex:1;">Annuler</button>
-      <button class="wz-btn" id="wz-select-delete" style="flex:2;background:rgba(239,100,97,0.14);border-color:var(--danger);color:var(--danger);">Supprimer (<span id="wz-select-count">0</span>)</button>
-    </div>
-
-    <div class="wz-footer">
-      <button class="wz-btn" id="wz-history-btn">📅 Historique</button>
-      <button class="wz-btn" id="wz-export">CSV</button>
-      <button class="wz-btn primary" id="wz-export-pdf">PDF</button>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-settings-modal" style="align-items:center;">
-    <div class="wz-modal-panel" style="border-radius:18px; max-width:320px; margin:0 20px; width:auto;">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title">Paramètres</div>
-        <button class="wz-modal-close" id="wz-settings-modal-close">✕</button>
-      </div>
-      <div class="wz-modal-body">
-        <button class="wz-period-btn" id="wz-pin-settings-btn">🔑 Code de suppression</button>
-        <button class="wz-period-btn" id="wz-appcode-settings-btn">🔒 Code d'ouverture</button>
-      </div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-history-modal">
-    <div class="wz-modal-panel">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title">Historique des ventes</div>
-        <button class="wz-modal-close" id="wz-history-close">✕</button>
-      </div>
-      <div class="wz-modal-body" id="wz-history-body"></div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-export-modal">
-    <div class="wz-modal-panel">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title" id="wz-export-modal-title">Exporter</div>
-        <button class="wz-modal-close" id="wz-export-modal-close">✕</button>
-      </div>
-      <div class="wz-modal-body">
-        <button class="wz-period-btn" data-period="today">Aujourd'hui</button>
-        <button class="wz-period-btn" data-period="week">Cette semaine</button>
-        <button class="wz-period-btn" data-period="month">Ce mois</button>
-        <button class="wz-period-btn" data-period="year">Cette année</button>
-      </div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-goals-modal">
-    <div class="wz-modal-panel">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title">Modifier les objectifs</div>
-        <button class="wz-modal-close" id="wz-goals-modal-close">✕</button>
-      </div>
-      <div class="wz-modal-body">
-        <label class="wz-goal-label">Objectif jour (Ar)</label>
-        <input type="number" inputmode="numeric" class="wz-goal-input" id="wz-goal-day-input">
-        <label class="wz-goal-label">Objectif semaine (Ar)</label>
-        <input type="number" inputmode="numeric" class="wz-goal-input" id="wz-goal-week-input">
-        <label class="wz-goal-label">Objectif mois (Ar)</label>
-        <input type="number" inputmode="numeric" class="wz-goal-input" id="wz-goal-month-input">
-        <button class="wz-lock-btn" id="wz-goals-save" style="width:100%;">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-confirm-modal" style="align-items:center;">
-    <div class="wz-modal-panel" style="border-radius:18px; max-width:320px; margin:0 20px; width:auto;">
-      <div class="wz-modal-body" style="padding:22px 20px;">
-        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin-bottom:8px;">Supprimer ce ticket ?</div>
-        <div id="wz-confirm-detail" style="color:var(--muted);font-size:12.5px;margin-bottom:14px;">Cette action est définitive.</div>
-        <label class="wz-goal-label">Code de suppression</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-confirm-pin" placeholder="••••" style="margin-bottom:6px;letter-spacing:0.3em;text-align:center;">
-        <div class="wz-lock-error" id="wz-confirm-pin-error" style="text-align:left;margin-bottom:10px;"></div>
-        <div style="display:flex;gap:10px;">
-          <button class="wz-btn" id="wz-confirm-cancel" style="flex:1;">Annuler</button>
-          <button class="wz-btn" id="wz-confirm-ok" style="flex:1;background:rgba(239,100,97,0.14);border-color:var(--danger);color:var(--danger);">Supprimer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-pin-modal" style="align-items:center;">
-    <div class="wz-modal-panel" style="border-radius:18px; max-width:320px; margin:0 20px; width:auto;">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title">Code de suppression</div>
-        <button class="wz-modal-close" id="wz-pin-modal-close">✕</button>
-      </div>
-      <div class="wz-modal-body">
-        <label class="wz-goal-label">Code actuel</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-pin-current" style="letter-spacing:0.3em;text-align:center;">
-        <label class="wz-goal-label">Nouveau code (4 chiffres)</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-pin-new" style="letter-spacing:0.3em;text-align:center;">
-        <label class="wz-goal-label">Confirmer le nouveau code</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-pin-confirm" style="letter-spacing:0.3em;text-align:center;">
-        <div class="wz-lock-error" id="wz-pin-error" style="text-align:left;margin-bottom:6px;"></div>
-        <button class="wz-lock-btn" id="wz-pin-save" style="width:100%;">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-appcode-modal" style="align-items:center;">
-    <div class="wz-modal-panel" style="border-radius:18px; max-width:320px; margin:0 20px; width:auto;">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title">Code d'ouverture</div>
-        <button class="wz-modal-close" id="wz-appcode-modal-close">✕</button>
-      </div>
-      <div class="wz-modal-body">
-        <label class="wz-goal-label">Code actuel</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-appcode-current" style="letter-spacing:0.3em;text-align:center;">
-        <label class="wz-goal-label">Nouveau code (4 chiffres)</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-appcode-new" style="letter-spacing:0.3em;text-align:center;">
-        <label class="wz-goal-label">Confirmer le nouveau code</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-appcode-confirm" style="letter-spacing:0.3em;text-align:center;">
-        <div class="wz-lock-error" id="wz-appcode-error" style="text-align:left;margin-bottom:6px;"></div>
-        <button class="wz-lock-btn" id="wz-appcode-save" style="width:100%;">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-  <div class="wz-modal-overlay" id="wz-backdate-modal">
-    <div class="wz-modal-panel">
-      <div class="wz-modal-head">
-        <div class="wz-modal-title">Ajouter une vente antérieure</div>
-        <button class="wz-modal-close" id="wz-backdate-close">✕</button>
-      </div>
-      <div class="wz-modal-body">
-        <label class="wz-goal-label">Code de suppression (autorisation)</label>
-        <input type="password" inputmode="numeric" maxlength="4" class="wz-goal-input" id="wz-backdate-pin" placeholder="••••" style="letter-spacing:0.3em;text-align:center;">
-        <div class="wz-lock-error" id="wz-backdate-pin-error" style="text-align:left;margin-bottom:6px;"></div>
-        <label class="wz-goal-label">Date</label>
-        <input type="date" class="wz-goal-input" id="wz-backdate-date">
-        <label class="wz-goal-label">Heure (optionnel)</label>
-        <input type="time" class="wz-goal-input" id="wz-backdate-time">
-        <div class="wz-section-label" style="padding:0 0 8px;">Tarifs</div>
-        <div id="wz-backdate-qty"></div>
-        <button class="wz-lock-btn" id="wz-backdate-add" style="width:100%;margin-top:8px;">Ajouter</button>
-      </div>
-    </div>
-  </div>
-  <div class="wz-toast" id="wz-toast"></div>
+<div class="wz-lock" id="wz-lock">
+  <div class="wz-lock-title">🔒 CHILL Wi-Fi Zone</div>
+  <div class="wz-lock-sub">Entrez le code pour accéder au suivi</div>
+  <input type="password" inputmode="numeric" maxlength="4" class="wz-lock-input" id="wz-lock-input" placeholder="••••">
+  <div class="wz-lock-error" id="wz-lock-error"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-(function(){
-  const APP_CODE_KEY = "chill-wifi-zone-app-code-shared";
-  let APP_CODE = "2200";
-  (async function loadAppCode(){
-    try{
-      const r = await window.storage.get(APP_CODE_KEY, true);
-      if(r && r.value) APP_CODE = r.value;
-    }catch(e){ /* valeur par défaut utilisée */ }
-  })();
-  async function saveAppCode(){
-    try{ await window.storage.set(APP_CODE_KEY, APP_CODE, true); }
-    catch(e){ toast("Erreur d'enregistrement du code"); }
+<div id="wz-root" style="display:none;">
+  <div class="wz-header">
+    <div>
+      <div class="wz-title">CHILL Wi-Fi Zone</div>
+      <div class="wz-sub"><span class="wz-sync-dot" id="wz-sync-dot"></span><span id="wz-sync-text">Synchronisé</span></div>
+    </div>
+    <div class="wz-date" id="wz-date"></div>
+  </div>
+
+  <div class="wz-hero">
+    <div class="wz-arc-wrap">
+      <svg width="112" height="112" viewBox="0 0 112 112">
+        <circle cx="56" cy="56" r="48" fill="none" stroke="var(--surface-2)" stroke-width="9"/>
+        <circle id="wz-arc-fg" cx="56" cy="56" r="48" fill="none" stroke="var(--signal)" stroke-width="9" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6"/>
+      </svg>
+      <div class="wz-arc-center">
+        <div class="wz-arc-pct" id="wz-pct">0%</div>
+        <div class="wz-arc-label">Objectif</div>
+      </div>
+    </div>
+    <div class="wz-hero-stats">
+      <div class="wz-stat-row"><div class="wz-stat-label">Aujourd'hui</div><div class="wz-stat-value signal" id="wz-today">0 Ar</div></div>
+      <div class="wz-stat-row"><div class="wz-stat-label">Cette semaine</div><div class="wz-stat-value signal" id="wz-week">0 Ar</div></div>
+      <div class="wz-stat-row"><div class="wz-stat-label">Ce mois</div><div class="wz-stat-value amber" id="wz-month">0 Ar</div></div>
+      <div class="wz-stat-row"><div class="wz-stat-label">Reste pour l'objectif</div><div class="wz-stat-value" id="wz-remain">—</div></div>
+    </div>
+  </div>
+
+  <div class="wz-section-label"><span>Objectifs</span></div>
+  <div class="wz-goals" id="wz-goals"></div>
+
+  <div class="wz-section-label"><span>Enregistrer une vente</span></div>
+  <div class="wz-grid" id="wz-tarifs"></div>
+
+  <div class="wz-section-label"><span>Aujourd'hui</span></div>
+  <div class="wz-log" id="wz-log"></div>
+
+  <div class="wz-footer">
+    <button class="wz-btn" id="wz-undo">↩ Annuler dernière</button>
+  </div>
+</div>
+
+<div class="wz-toast" id="wz-toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, deleteDoc, doc,
+  onSnapshot, query, orderBy, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFWSFp-gjwgabQnWuKq-iVKDM_1AmFSZE",
+  authDomain: "chillice.firebaseapp.com",
+  projectId: "chillice",
+  storageBucket: "chillice.firebasestorage.app",
+  messagingSenderId: "656777693124",
+  appId: "1:656777693124:web:a6247d09cefecc3bebc691"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const salesCol = collection(db, "sales");
+
+const APP_CODE = "2200"; // change-le ici si besoin
+
+const TARIFS = [
+  { label: "1 heure", amount: 500, color: "#F43F5E" },
+  { label: "3 heures", amount: 1000, color: "#F5A623" },
+  { label: "24 heures", amount: 2000, color: "#7C9EFF" },
+  { label: "1 mois", amount: 20000, color: "#F472B6" }
+];
+const GOALS = { day: 10000, week: 50000, month: 200000 };
+
+function colorForLabel(label){ const t = TARIFS.find(x=>x.label===label); return t? t.color : 'var(--signal)'; }
+function fmt(n){ return n.toLocaleString('fr-FR').replace(/,/g,' ') + " Ar"; }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function monthStr(){ return new Date().toISOString().slice(0,7); }
+function startOfWeekISO(){
+  const d = new Date(); const day = d.getDay();
+  const diff = (day===0?-6:1) - day;
+  d.setDate(d.getDate()+diff); d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+function toast(msg){
+  const el = document.getElementById('wz-toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(()=> el.classList.remove('show'), 1600);
+}
+
+// --- Verrouillage ---
+const lockEl = document.getElementById('wz-lock');
+const rootEl = document.getElementById('wz-root');
+const lockInput = document.getElementById('wz-lock-input');
+const lockError = document.getElementById('wz-lock-error');
+function tryUnlock(){
+  if(lockInput.value === APP_CODE){
+    lockEl.style.display = 'none';
+    rootEl.style.display = 'block';
+  } else {
+    lockError.textContent = "Code incorrect";
+    lockInput.value = '';
   }
+}
+lockInput.addEventListener('input', ()=>{ lockError.textContent=''; if(lockInput.value.length===4) tryUnlock(); });
+lockInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+lockInput.focus();
 
-  const lockEl = document.getElementById('wz-lock');
-  const lockInput = document.getElementById('wz-lock-input');
-  const lockError = document.getElementById('wz-lock-error');
+document.getElementById('wz-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
 
-  function tryUnlock(){
-    if(lockInput.value === APP_CODE){
-      lockEl.style.display = 'none';
-    } else {
-      lockError.textContent = "Code incorrect";
-      lockInput.value = '';
-      lockInput.focus();
-    }
-  }
-  lockInput.addEventListener('input', () => {
-    lockError.textContent = '';
-    if(lockInput.value.length === 4) tryUnlock();
-  });
-  lockInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') tryUnlock();
-  });
-  lockInput.focus();
+// --- Tarifs ---
+const tarifsEl = document.getElementById('wz-tarifs');
+TARIFS.forEach(t=>{
+  const btn = document.createElement('button');
+  btn.className = 'wz-tarif-btn';
+  btn.style.borderLeft = `3px solid ${t.color}`;
+  btn.innerHTML = `<div class="wz-tarif-amount" style="color:${t.color};">${fmt(t.amount)}</div><div class="wz-tarif-name">${t.label}</div>`;
+  btn.onclick = ()=> addSale(t);
+  tarifsEl.appendChild(btn);
+});
 
-  const TARIFS = [
-    { label: "1 heure", amount: 500, color: "#F43F5E" },
-    { label: "3 heures", amount: 1000, color: "#F5A623" },
-    { label: "24 heures", amount: 2000, color: "#7C9EFF" },
-    { label: "1 mois", amount: 20000, color: "#F472B6" }
-  ];
-  function colorForLabel(label){
-    const t = TARIFS.find(x => x.label === label);
-    return t ? t.color : 'var(--signal)';
-  }
-  const STORE_KEY = "chill-wifi-zone-sales-shared";
-  const GOALS_KEY = "chill-wifi-zone-goals-shared";
-  const PIN_KEY = "chill-wifi-zone-delete-pin-shared";
-
-  let sales = [];
-  let GOALS = { day: 10000, week: 50000, month: 200000 };
-  let DELETE_PIN = "7799";
-
-  function fmt(n){
-    return n.toLocaleString('fr-FR').replace(/,/g,' ') + " Ar";
-  }
-  function todayStr(){
-    return new Date().toISOString().slice(0,10);
-  }
-  function monthStr(){
-    return new Date().toISOString().slice(0,7);
-  }
-  function startOfWeekISO(){
-    const d = new Date();
-    const day = d.getDay(); // 0=dim, 1=lun...
-    const diff = (day === 0 ? -6 : 1) - day; // recule jusqu'au lundi
-    d.setDate(d.getDate() + diff);
-    d.setHours(0,0,0,0);
-    return d.toISOString();
-  }
-
-  const PERIOD_LABELS = {
-    today: "Aujourd'hui",
-    week: "Cette semaine",
-    month: "Ce mois",
-    year: "Cette année"
-  };
-
-  function filterByPeriod(period){
-    if(period === 'today'){
-      return sales.filter(s => s.ts.slice(0,10) === todayStr());
-    }
-    if(period === 'week'){
-      const start = startOfWeekISO();
-      return sales.filter(s => s.ts >= start);
-    }
-    if(period === 'month'){
-      return sales.filter(s => s.ts.slice(0,7) === monthStr());
-    }
-    if(period === 'year'){
-      const year = new Date().getFullYear().toString();
-      return sales.filter(s => s.ts.slice(0,4) === year);
-    }
-    return sales.slice();
-  }
-
-  const tarifsEl = document.getElementById('wz-tarifs');
-  TARIFS.forEach(t => {
-    const btn = document.createElement('button');
-    btn.className = 'wz-tarif-btn';
-    btn.style.borderLeft = `3px solid ${t.color}`;
-    btn.innerHTML = `<div class="wz-tarif-amount" style="color:${t.color};">${fmt(t.amount)}</div><div class="wz-tarif-name">${t.label}</div>`;
-    btn.onclick = () => addSale(t);
-    tarifsEl.appendChild(btn);
-  });
-
-  let backdateQty = {};
-
-  function renderBackdateQty(){
-    const el = document.getElementById('wz-backdate-qty');
-    el.innerHTML = TARIFS.map(t => {
-      const qty = backdateQty[t.label] || 0;
-      return `<div class="wz-qty-row" style="border-left:3px solid ${t.color};">
-        <div class="wz-qty-info">
-          <span class="wz-qty-amount" style="color:${t.color};">${fmt(t.amount)}</span>
-          <span class="wz-qty-name">${t.label}</span>
-        </div>
-        <div class="wz-qty-stepper">
-          <button class="wz-qty-btn" data-action="dec" data-label="${t.label}">−</button>
-          <span class="wz-qty-value">${qty}</span>
-          <button class="wz-qty-btn" data-action="inc" data-label="${t.label}">+</button>
-        </div>
-      </div>`;
-    }).join('');
-    el.querySelectorAll('.wz-qty-btn').forEach(b => {
-      b.onclick = () => {
-        const label = b.dataset.label;
-        const current = backdateQty[label] || 0;
-        if(b.dataset.action === 'inc') backdateQty[label] = current + 1;
-        else backdateQty[label] = Math.max(0, current - 1);
-        renderBackdateQty();
-      };
-    });
-  }
-
-  function syncBackdateQtyFromDate(){
-    const dateVal = document.getElementById('wz-backdate-date').value;
-    backdateQty = {};
-    sales.filter(s => s.ts.slice(0,10) === dateVal).forEach(s => {
-      backdateQty[s.label] = (backdateQty[s.label] || 0) + 1;
-    });
-    renderBackdateQty();
-  }
-
-  const backdateModal = document.getElementById('wz-backdate-modal');
-  const backdatePinInput = document.getElementById('wz-backdate-pin');
-  const backdatePinError = document.getElementById('wz-backdate-pin-error');
-  document.getElementById('wz-backdate-btn').onclick = () => {
-    document.getElementById('wz-backdate-date').value = todayStr();
-    document.getElementById('wz-backdate-date').max = todayStr();
-    document.getElementById('wz-backdate-time').value = '12:00';
-    backdatePinInput.value = '';
-    backdatePinError.textContent = '';
-    syncBackdateQtyFromDate();
-    backdateModal.classList.add('show');
-  };
-  document.getElementById('wz-backdate-date').addEventListener('change', syncBackdateQtyFromDate);
-  document.getElementById('wz-backdate-close').onclick = () => backdateModal.classList.remove('show');
-  backdateModal.onclick = (e) => { if(e.target === backdateModal) backdateModal.classList.remove('show'); };
-
-  document.getElementById('wz-backdate-add').onclick = () => {
-    if(backdatePinInput.value !== DELETE_PIN){
-      backdatePinError.textContent = "Code incorrect";
-      backdatePinInput.value = '';
-      backdatePinInput.focus();
-      return;
-    }
-    const entries = Object.entries(backdateQty).filter(([, qty]) => qty > 0);
-    if(entries.length === 0){ toast("Choisissez au moins un ticket"); return; }
-
-    const dateVal = document.getElementById('wz-backdate-date').value;
-    const timeVal = document.getElementById('wz-backdate-time').value || '12:00';
-    if(!dateVal){ toast("Choisissez une date"); return; }
-    const baseTs = new Date(`${dateVal}T${timeVal}:00`);
-
-    const replacedCount = sales.filter(s => s.ts.slice(0,10) === dateVal).length;
-    sales = sales.filter(s => s.ts.slice(0,10) !== dateVal);
-
-    let count = 0;
-    let total = 0;
-    entries.forEach(([label, qty]) => {
-      const t = TARIFS.find(x => x.label === label);
-      for(let i = 0; i < qty; i++){
-        const ts = new Date(baseTs.getTime() + count).toISOString();
-        sales.push({ id: Date.now().toString(36) + count, label: t.label, amount: t.amount, ts });
-        total += t.amount;
-        count++;
-      }
-    });
-    save();
-    render();
-    backdateModal.classList.remove('show');
-    const dateLabel = new Date(dateVal + 'T00:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-    const suffix = replacedCount > 0 ? ` (${replacedCount} ancien${replacedCount>1?'s':''} remplacé${replacedCount>1?'s':''})` : '';
-    toast(`${count} ticket${count>1?'s':''} (${fmt(total)}) pour le ${dateLabel}${suffix}`);
-  };
-
-  document.getElementById('wz-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
-
-  async function load(){
-    try{
-      const res = await window.storage.get(STORE_KEY, true);
-      sales = res && res.value ? JSON.parse(res.value) : [];
-    }catch(e){
-      sales = [];
-    }
-    // Migration ponctuelle : récupère d'anciennes ventes enregistrées avant le passage en mode partagé
-    if(sales.length === 0){
-      try{
-        const old = await window.storage.get("wifi-sales-log", false);
-        if(old && old.value){
-          sales = JSON.parse(old.value);
-          await save();
-        }
-      }catch(e){ /* rien à migrer, normal */ }
-    }
-    try{
-      const gres = await window.storage.get(GOALS_KEY, true);
-      if(gres && gres.value) GOALS = JSON.parse(gres.value);
-    }catch(e){ /* valeurs par défaut utilisées */ }
-    try{
-      const pres = await window.storage.get(PIN_KEY, true);
-      if(pres && pres.value) DELETE_PIN = pres.value;
-    }catch(e){ /* valeur par défaut utilisée */ }
-    render();
-  }
-
-  async function save(){
-    try{
-      await window.storage.set(STORE_KEY, JSON.stringify(sales), true);
-    }catch(e){ toast("Erreur d'enregistrement"); }
-  }
-
-  async function savePin(){
-    try{
-      await window.storage.set(PIN_KEY, DELETE_PIN, true);
-    }catch(e){ toast("Erreur d'enregistrement du code"); }
-  }
-
-  async function saveGoals(){
-    try{
-      await window.storage.set(GOALS_KEY, JSON.stringify(GOALS), true);
-    }catch(e){ toast("Erreur d'enregistrement des objectifs"); }
-  }
-
-  function addSale(t){
-    sales.push({ id: Date.now().toString(36), label: t.label, amount: t.amount, ts: new Date().toISOString() });
-    save();
-    render();
+async function addSale(t){
+  try{
+    await addDoc(salesCol, { label:t.label, amount:t.amount, ts: Timestamp.now() });
     toast(`+ ${fmt(t.amount)} enregistré`);
-  }
+  }catch(e){ toast("Erreur réseau — réessaie"); }
+}
 
-  function removeSale(id){
-    sales = sales.filter(s => s.id !== id);
-    save();
-    render();
-    toast("Ticket supprimé");
-  }
+let lastSaleId = null;
+async function undoLast(){
+  if(!lastSaleId) return;
+  try{ await deleteDoc(doc(db,"sales", lastSaleId)); toast("Dernière vente annulée"); }
+  catch(e){ toast("Erreur — réessaie"); }
+}
+document.getElementById('wz-undo').onclick = undoLast;
 
-  function removeSales(ids){
-    const idSet = new Set(ids);
-    sales = sales.filter(s => !idSet.has(s.id));
-    save();
-    render();
-    toast(ids.length > 1 ? `${ids.length} tickets supprimés` : "Ticket supprimé");
-  }
+// --- Sync temps réel ---
+const syncDot = document.getElementById('wz-sync-dot');
+const syncText = document.getElementById('wz-sync-text');
+let sales = [];
 
-  let pendingDeleteIds = [];
-  const confirmModal = document.getElementById('wz-confirm-modal');
-  const confirmDetailEl = document.getElementById('wz-confirm-detail');
-  const confirmPinInput = document.getElementById('wz-confirm-pin');
-  const confirmPinError = document.getElementById('wz-confirm-pin-error');
-
-  function askDeleteConfirm(id){
-    pendingDeleteIds = [id];
-    confirmDetailEl.textContent = "Cette action est définitive.";
-    confirmPinInput.value = '';
-    confirmPinError.textContent = '';
-    confirmModal.classList.add('show');
-    confirmPinInput.focus();
-  }
-  function askBulkDeleteConfirm(ids){
-    pendingDeleteIds = ids.slice();
-    confirmDetailEl.textContent = `${ids.length} ticket${ids.length>1?'s':''} seront supprimés définitivement.`;
-    confirmPinInput.value = '';
-    confirmPinError.textContent = '';
-    confirmModal.classList.add('show');
-    confirmPinInput.focus();
-  }
-  document.getElementById('wz-confirm-cancel').onclick = () => {
-    pendingDeleteIds = [];
-    confirmModal.classList.remove('show');
-  };
-  confirmModal.onclick = (e) => {
-    if(e.target === confirmModal){ pendingDeleteIds = []; confirmModal.classList.remove('show'); }
-  };
-  function attemptDelete(){
-    if(confirmPinInput.value !== DELETE_PIN){
-      confirmPinError.textContent = "Code incorrect";
-      confirmPinInput.value = '';
-      confirmPinInput.focus();
-      return;
-    }
-    if(pendingDeleteIds.length === 1) removeSale(pendingDeleteIds[0]);
-    else if(pendingDeleteIds.length > 1) removeSales(pendingDeleteIds);
-    pendingDeleteIds = [];
-    confirmModal.classList.remove('show');
-    exitSelectionMode();
-  }
-  document.getElementById('wz-confirm-ok').onclick = attemptDelete;
-  confirmPinInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') attemptDelete();
+const q = query(salesCol, orderBy("ts","desc"));
+onSnapshot(q, (snap)=>{
+  sales = snap.docs.map(d=>{
+    const data = d.data();
+    return { id:d.id, label:data.label, amount:data.amount, ts: data.ts ? data.ts.toDate().toISOString() : new Date().toISOString() };
   });
+  lastSaleId = sales.length ? sales[0].id : null;
+  syncDot.classList.remove('offline');
+  syncText.textContent = 'Synchronisé';
+  render();
+}, (err)=>{
+  syncDot.classList.add('offline');
+  syncText.textContent = 'Hors ligne';
+});
 
-  // --- Menu paramètres discret ---
-  const settingsModal = document.getElementById('wz-settings-modal');
-  document.getElementById('wz-settings-btn').onclick = () => settingsModal.classList.add('show');
-  document.getElementById('wz-settings-modal-close').onclick = () => settingsModal.classList.remove('show');
-  settingsModal.onclick = (e) => { if(e.target === settingsModal) settingsModal.classList.remove('show'); };
+window.addEventListener('online', ()=>{ syncDot.classList.remove('offline'); syncText.textContent='Synchronisé'; });
+window.addEventListener('offline', ()=>{ syncDot.classList.add('offline'); syncText.textContent='Hors ligne'; });
 
-  // --- Modification du code de suppression ---
-  const pinModal = document.getElementById('wz-pin-modal');
-  const pinCurrentInput = document.getElementById('wz-pin-current');
-  const pinNewInput = document.getElementById('wz-pin-new');
-  const pinConfirmInput = document.getElementById('wz-pin-confirm');
-  const pinErrorEl = document.getElementById('wz-pin-error');
+function render(){
+  const today = todayStr(), month = monthStr(), weekStart = startOfWeekISO();
+  const todaySales = sales.filter(s=>s.ts.slice(0,10)===today);
+  const weekSales = sales.filter(s=>s.ts>=weekStart);
+  const monthSales = sales.filter(s=>s.ts.slice(0,7)===month);
 
-  document.getElementById('wz-pin-settings-btn').onclick = () => {
-    settingsModal.classList.remove('show');
-    pinCurrentInput.value = '';
-    pinNewInput.value = '';
-    pinConfirmInput.value = '';
-    pinErrorEl.textContent = '';
-    pinModal.classList.add('show');
-  };
-  document.getElementById('wz-pin-modal-close').onclick = () => pinModal.classList.remove('show');
-  pinModal.onclick = (e) => { if(e.target === pinModal) pinModal.classList.remove('show'); };
+  const todayTotal = todaySales.reduce((a,s)=>a+s.amount,0);
+  const weekTotal = weekSales.reduce((a,s)=>a+s.amount,0);
+  const monthTotal = monthSales.reduce((a,s)=>a+s.amount,0);
+  const remain = Math.max(GOALS.month - monthTotal, 0);
+  const pct = GOALS.month>0 ? Math.min(monthTotal/GOALS.month,1) : 0;
 
-  document.getElementById('wz-pin-save').onclick = async () => {
-    const current = pinCurrentInput.value;
-    const next = pinNewInput.value;
-    const confirmVal = pinConfirmInput.value;
+  document.getElementById('wz-today').textContent = fmt(todayTotal);
+  document.getElementById('wz-week').textContent = fmt(weekTotal);
+  document.getElementById('wz-month').textContent = fmt(monthTotal);
+  document.getElementById('wz-remain').textContent = remain===0 ? "Objectif atteint" : fmt(remain);
+  document.getElementById('wz-pct').textContent = Math.round(pct*100)+"%";
 
-    if(current !== DELETE_PIN){
-      pinErrorEl.textContent = "Code actuel incorrect";
-      return;
-    }
-    if(!/^\d{4}$/.test(next)){
-      pinErrorEl.textContent = "Le nouveau code doit avoir 4 chiffres";
-      return;
-    }
-    if(next !== confirmVal){
-      pinErrorEl.textContent = "Les deux codes ne correspondent pas";
-      return;
-    }
-    DELETE_PIN = next;
-    await savePin();
-    pinModal.classList.remove('show');
-    toast("Code de suppression mis à jour");
-  };
+  const circumference = 301.6;
+  const arc = document.getElementById('wz-arc-fg');
+  arc.setAttribute('stroke-dashoffset', circumference*(1-pct));
+  arc.setAttribute('stroke', pct>=1 ? 'var(--amber)' : 'var(--signal)');
 
-  // --- Modification du code d'ouverture ---
-  const appcodeModal = document.getElementById('wz-appcode-modal');
-  const appcodeCurrentInput = document.getElementById('wz-appcode-current');
-  const appcodeNewInput = document.getElementById('wz-appcode-new');
-  const appcodeConfirmInput = document.getElementById('wz-appcode-confirm');
-  const appcodeErrorEl = document.getElementById('wz-appcode-error');
+  const goalsEl = document.getElementById('wz-goals');
+  const rows = [
+    {label:"Aujourd'hui", total:todayTotal, goal:GOALS.day},
+    {label:"Cette semaine", total:weekTotal, goal:GOALS.week},
+    {label:"Ce mois", total:monthTotal, goal:GOALS.month}
+  ];
+  goalsEl.innerHTML = rows.map(r=>{
+    const p = r.goal>0 ? Math.min(r.total/r.goal,1) : 0;
+    return `<div class="wz-goal-row">
+      <div class="wz-goal-top"><span>${r.label}</span><strong>${fmt(r.total)} / ${fmt(r.goal)}</strong></div>
+      <div class="wz-goal-bar-bg"><div class="wz-goal-bar-fg${p>=1?' full':''}" style="width:${Math.round(p*100)}%"></div></div>
+    </div>`;
+  }).join('');
 
-  document.getElementById('wz-appcode-settings-btn').onclick = () => {
-    settingsModal.classList.remove('show');
-    appcodeCurrentInput.value = '';
-    appcodeNewInput.value = '';
-    appcodeConfirmInput.value = '';
-    appcodeErrorEl.textContent = '';
-    appcodeModal.classList.add('show');
-  };
-  document.getElementById('wz-appcode-modal-close').onclick = () => appcodeModal.classList.remove('show');
-  appcodeModal.onclick = (e) => { if(e.target === appcodeModal) appcodeModal.classList.remove('show'); };
-
-  document.getElementById('wz-appcode-save').onclick = async () => {
-    const current = appcodeCurrentInput.value;
-    const next = appcodeNewInput.value;
-    const confirmVal = appcodeConfirmInput.value;
-
-    if(current !== APP_CODE){
-      appcodeErrorEl.textContent = "Code actuel incorrect";
-      return;
-    }
-    if(!/^\d{4}$/.test(next)){
-      appcodeErrorEl.textContent = "Le nouveau code doit avoir 4 chiffres";
-      return;
-    }
-    if(next !== confirmVal){
-      appcodeErrorEl.textContent = "Les deux codes ne correspondent pas";
-      return;
-    }
-    APP_CODE = next;
-    await saveAppCode();
-    appcodeModal.classList.remove('show');
-    toast("Code d'ouverture mis à jour");
-  };
-
-  // --- Sélection multiple ---
-  let selectionMode = false;
-  let selectedIds = new Set();
-  const selectBar = document.getElementById('wz-select-bar');
-  const selectToggleBtn = document.getElementById('wz-select-toggle');
-
-  function toggleSelect(id){
-    if(selectedIds.has(id)) selectedIds.delete(id);
-    else selectedIds.add(id);
-    document.getElementById('wz-select-count').textContent = selectedIds.size;
-    render();
-  }
-  function exitSelectionMode(){
-    selectionMode = false;
-    selectedIds = new Set();
-    selectBar.style.display = 'none';
-    selectToggleBtn.textContent = '☑ Sélectionner';
-    render();
-  }
-  selectToggleBtn.onclick = () => {
-    if(selectionMode){
-      exitSelectionMode();
-    } else {
-      selectionMode = true;
-      selectedIds = new Set();
-      selectBar.style.display = 'flex';
-      document.getElementById('wz-select-count').textContent = '0';
-      selectToggleBtn.textContent = '✕ Annuler';
-      render();
-    }
-  };
-  document.getElementById('wz-select-cancel').onclick = exitSelectionMode;
-  document.getElementById('wz-select-delete').onclick = () => {
-    if(selectedIds.size === 0){ toast("Aucun ticket sélectionné"); return; }
-    askBulkDeleteConfirm(Array.from(selectedIds));
-  };
-
-  function undoLast(){
-    if(sales.length === 0) return;
-    sales.pop();
-    save();
-    render();
-    toast("Dernière vente annulée");
-  }
-
-  function toast(msg){
-    const el = document.getElementById('wz-toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(el._t);
-    el._t = setTimeout(()=> el.classList.remove('show'), 1600);
-  }
-
-  function render(){
-    const today = todayStr();
-    const month = monthStr();
-    const weekStart = startOfWeekISO();
-    const todaySales = sales.filter(s => s.ts.slice(0,10) === today);
-    const weekSales = sales.filter(s => s.ts >= weekStart);
-    const monthSales = sales.filter(s => s.ts.slice(0,7) === month);
-
-    const todayTotal = todaySales.reduce((a,s)=>a+s.amount,0);
-    const weekTotal = weekSales.reduce((a,s)=>a+s.amount,0);
-    const monthTotal = monthSales.reduce((a,s)=>a+s.amount,0);
-    const remain = Math.max(GOALS.month - monthTotal, 0);
-    const pct = GOALS.month > 0 ? Math.min(monthTotal / GOALS.month, 1) : 0;
-
-    document.getElementById('wz-today').textContent = fmt(todayTotal);
-    document.getElementById('wz-week').textContent = fmt(weekTotal);
-    document.getElementById('wz-month').textContent = fmt(monthTotal);
-    document.getElementById('wz-remain').textContent = remain === 0 ? "Objectif atteint" : fmt(remain);
-    document.getElementById('wz-pct').textContent = Math.round(pct*100) + "%";
-
-    const circumference = 301.6;
-    const arc = document.getElementById('wz-arc-fg');
-    arc.setAttribute('stroke-dashoffset', circumference * (1 - pct));
-    arc.setAttribute('stroke', pct >= 1 ? 'var(--amber)' : 'var(--signal)');
-
-    renderGoals(todayTotal, weekTotal, monthTotal);
-    renderChart();
-
-    const logEl = document.getElementById('wz-log');
-    if(todaySales.length === 0){
-      logEl.innerHTML = '<div class="wz-log-empty">Aucune vente enregistrée ce jour</div>';
-    } else {
-      logEl.innerHTML = '';
-      todaySales.slice().reverse().forEach(s => {
-        const row = document.createElement('div');
-        row.className = 'wz-log-item' + (selectedIds.has(s.id) ? ' selected' : '');
-        row.dataset.id = s.id;
-        const time = new Date(s.ts).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-        const dot = `<span style="width:8px;height:8px;border-radius:50%;background:${colorForLabel(s.label)};flex:none;display:inline-block;"></span>`;
-        const leftHtml = selectionMode
-          ? `<input type="checkbox" class="wz-log-checkbox" data-id="${s.id}" ${selectedIds.has(s.id) ? 'checked' : ''}>
-             ${dot}
-             <span class="wz-log-time">${time}</span>
-             <span>${s.label}</span>`
-          : `${dot}
-             <span class="wz-log-time">${time}</span>
-             <span>${s.label}</span>`;
-        const rightHtml = selectionMode
-          ? `<span class="wz-log-amount" style="color:${colorForLabel(s.label)};">${fmt(s.amount)}</span>`
-          : `<span class="wz-log-amount" style="color:${colorForLabel(s.label)};">${fmt(s.amount)}</span>
-             <button class="wz-log-del" data-id="${s.id}">✕</button>`;
-        row.innerHTML = `
-          <div class="wz-log-left">${leftHtml}</div>
-          <div style="display:flex;align-items:center;gap:8px;">${rightHtml}</div>`;
-        logEl.appendChild(row);
-      });
-      if(selectionMode){
-        logEl.querySelectorAll('.wz-log-checkbox').forEach(cb => {
-          cb.onclick = (e) => {
-            e.stopPropagation();
-            toggleSelect(cb.dataset.id);
-          };
-        });
-        logEl.querySelectorAll('.wz-log-item').forEach(row => {
-          row.onclick = () => toggleSelect(row.dataset.id);
-        });
-      } else {
-        logEl.querySelectorAll('.wz-log-del').forEach(b => {
-          b.onclick = () => askDeleteConfirm(b.dataset.id);
-        });
-      }
-    }
-  }
-
-  function renderGoals(todayTotal, weekTotal, monthTotal){
-    const el = document.getElementById('wz-goals');
-    const rows = [
-      { label: "Aujourd'hui", total: todayTotal, goal: GOALS.day },
-      { label: "Cette semaine", total: weekTotal, goal: GOALS.week },
-      { label: "Ce mois", total: monthTotal, goal: GOALS.month }
-    ];
-    el.innerHTML = rows.map(r => {
-      const pct = r.goal > 0 ? Math.min(r.total / r.goal, 1) : 0;
-      const full = pct >= 1;
-      return `<div class="wz-goal-row">
-        <div class="wz-goal-top"><span>${r.label}</span><strong>${fmt(r.total)} / ${fmt(r.goal)}</strong></div>
-        <div class="wz-goal-bar-bg"><div class="wz-goal-bar-fg${full ? ' full' : ''}" style="width:${Math.round(pct*100)}%"></div></div>
-      </div>`;
-    }).join('');
-  }
-
-  const CHART_TARIFS = TARIFS.filter(t => t.label !== "1 mois");
-
-  function renderChart(){
-    const trendEl = document.getElementById('wz-chart-trend');
-    const svgWrap = document.getElementById('wz-chart-svg');
-    const legendEl = document.getElementById('wz-chart-legend');
-
-    // Du 1er du mois en cours jusqu'à aujourd'hui : se renouvelle automatiquement chaque mois
-    const now = new Date();
-    const daysInMonthSoFar = now.getDate();
-    const days = [];
-    for(let i = daysInMonthSoFar - 1; i >= 0; i--){
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(d.toISOString().slice(0,10));
-    }
-
-    // Une série cumulée par tarif depuis le début du mois (hors forfait 1 mois)
-    const series = CHART_TARIFS.map(t => {
-      let cum = 0;
-      return days.map(d => {
-        const dayTotal = sales
-          .filter(s => s.ts.slice(0,10) === d && s.label === t.label)
-          .reduce((a,s) => a + s.amount, 0);
-        cum += dayTotal;
-        return cum;
-      });
-    });
-
-    const maxVal = Math.max(1, ...series.flat());
-    const svgW = 600, svgH = 190, padL = 34, padR = 8, padT = 10, padB = 20;
-    const plotW = svgW - padL - padR;
-    const plotH = svgH - padT - padB;
-    const xFor = i => padL + (days.length > 1 ? (i / (days.length - 1)) * plotW : 0);
-    const yFor = v => padT + plotH - (v / maxVal) * plotH;
-
-    const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f => {
-      const y = padT + plotH - f * plotH;
-      return `<line x1="${padL}" y1="${y}" x2="${svgW - padR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
-    }).join('');
-
-    const yLabels = [0, 0.5, 1].map(f => {
-      const y = padT + plotH - f * plotH;
-      const val = Math.round(f * maxVal);
-      const label = val >= 1000 ? Math.round(val/1000) + 'k' : val;
-      return `<text x="${padL - 6}" y="${y + 3}" font-size="8" fill="var(--muted)" text-anchor="end" font-family="'JetBrains Mono', monospace">${label}</text>`;
-    }).join('');
-
-    const dayLabels = days.map((d, i) => {
-      if(i % 3 !== 0 && i !== days.length - 1) return '';
-      const lbl = new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-      return `<text x="${xFor(i)}" y="${svgH - 4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${lbl}</text>`;
-    }).join('');
-
-    const polylines = series.map((vals, idx) => {
-      const points = vals.map((v, i) => `${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`).join(' ');
-      return `<polyline points="${points}" fill="none" stroke="${CHART_TARIFS[idx].color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-    }).join('');
-
-    svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%; height:auto; display:block;">
-      ${gridLines}${polylines}${dayLabels}${yLabels}
-    </svg>`;
-
-    legendEl.innerHTML = CHART_TARIFS.map((t, idx) => `
-      <span style="display:inline-flex; align-items:center; gap:5px; font-size:10.5px; color:var(--muted); margin-right:14px; margin-bottom:4px;">
-        <span style="width:11px; height:3px; border-radius:2px; background:${t.color}; display:inline-block;"></span>${t.label}
-      </span>`).join('');
-
-    const weekStart = startOfWeekISO();
-    const thisWeekTotal = sales.filter(s => s.ts >= weekStart).reduce((a,s)=>a+s.amount,0);
-    const prevWeekStartDate = new Date(weekStart);
-    prevWeekStartDate.setDate(prevWeekStartDate.getDate() - 7);
-    const prevWeekStart = prevWeekStartDate.toISOString();
-    const prevWeekTotal = sales.filter(s => s.ts >= prevWeekStart && s.ts < weekStart).reduce((a,s)=>a+s.amount,0);
-
-    trendEl.className = '';
-    if(thisWeekTotal === 0 && prevWeekTotal === 0){
-      trendEl.textContent = 'Pas encore assez de données';
-    } else if(prevWeekTotal === 0){
-      trendEl.textContent = '📈 Nouvelle activité';
-      trendEl.className = 'up';
-    } else {
-      const pct = Math.round(((thisWeekTotal - prevWeekTotal) / prevWeekTotal) * 100);
-      trendEl.textContent = (pct >= 0 ? '📈 +' : '📉 ') + pct + '% vs sem. dernière';
-      trendEl.className = pct >= 0 ? 'up' : 'down';
-    }
-  }
-
-  const goalsModal = document.getElementById('wz-goals-modal');
-  document.getElementById('wz-goals-edit').onclick = () => {
-    document.getElementById('wz-goal-day-input').value = GOALS.day;
-    document.getElementById('wz-goal-week-input').value = GOALS.week;
-    document.getElementById('wz-goal-month-input').value = GOALS.month;
-    goalsModal.classList.add('show');
-  };
-  document.getElementById('wz-goals-modal-close').onclick = () => goalsModal.classList.remove('show');
-  goalsModal.onclick = (e) => { if(e.target === goalsModal) goalsModal.classList.remove('show'); };
-  document.getElementById('wz-goals-save').onclick = async () => {
-    const day = parseInt(document.getElementById('wz-goal-day-input').value, 10) || 0;
-    const week = parseInt(document.getElementById('wz-goal-week-input').value, 10) || 0;
-    const month = parseInt(document.getElementById('wz-goal-month-input').value, 10) || 0;
-    GOALS = { day, week, month };
-    await saveGoals();
-    render();
-    goalsModal.classList.remove('show');
-    toast("Objectifs mis à jour");
-  };
-
-  const historyModal = document.getElementById('wz-history-modal');
-  document.getElementById('wz-history-btn').onclick = () => {
-    renderHistory();
-    historyModal.classList.add('show');
-  };
-  document.getElementById('wz-history-close').onclick = () => {
-    historyModal.classList.remove('show');
-  };
-  historyModal.onclick = (e) => {
-    if(e.target === historyModal) historyModal.classList.remove('show');
-  };
-
-  function renderHistory(){
-    const body = document.getElementById('wz-history-body');
-    const today = todayStr();
-    const byDay = {};
-    sales.forEach(s => {
-      const d = s.ts.slice(0,10);
-      if(d === today) return; // "aujourd'hui" déjà visible dans la vue principale
-      if(!byDay[d]) byDay[d] = [];
-      byDay[d].push(s);
-    });
-    const days = Object.keys(byDay).sort((a,b)=> b.localeCompare(a));
-
-    if(days.length === 0){
-      body.innerHTML = '<div class="wz-modal-empty">Pas encore de jours précédents enregistrés</div>';
-      return;
-    }
-
-    body.innerHTML = '';
-    days.forEach(d => {
-      const tickets = byDay[d].slice().reverse();
-      const total = tickets.reduce((a,s)=>a+s.amount,0);
-      const dateLabel = new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
-
-      const group = document.createElement('div');
-      group.className = 'wz-day-group';
-      group.innerHTML = `
-        <div class="wz-day-head" data-day="${d}">
-          <div>
-            <div class="wz-day-date">${dateLabel}</div>
-            <div class="wz-day-count">${tickets.length} ticket${tickets.length>1?'s':''}</div>
-          </div>
-          <div class="wz-day-total">${fmt(total)}</div>
-        </div>
-        <div class="wz-day-detail" id="wz-day-detail-${d}">
-          ${tickets.map(t => {
-            const time = new Date(t.ts).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-            const dot = `<span style="width:7px;height:7px;border-radius:50%;background:${colorForLabel(t.label)};display:inline-block;margin-right:6px;"></span>`;
-            return `<div class="wz-day-ticket"><span>${dot}${time} — ${t.label}</span><span>${fmt(t.amount)}</span></div>`;
-          }).join('')}
+  const logEl = document.getElementById('wz-log');
+  if(todaySales.length===0){
+    logEl.innerHTML = '<div class="wz-log-empty">Aucune vente enregistrée ce jour</div>';
+  } else {
+    logEl.innerHTML = '';
+    todaySales.forEach(s=>{
+      const row = document.createElement('div');
+      row.className = 'wz-log-item';
+      const time = new Date(s.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const dot = `<span style="width:8px;height:8px;border-radius:50%;background:${colorForLabel(s.label)};flex:none;display:inline-block;"></span>`;
+      row.innerHTML = `
+        <div class="wz-log-left">${dot}<span class="wz-log-time">${time}</span><span>${s.label}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="wz-log-amount" style="color:${colorForLabel(s.label)};">${fmt(s.amount)}</span>
+          <button class="wz-log-del" data-id="${s.id}">✕</button>
         </div>`;
-      body.appendChild(group);
+      logEl.appendChild(row);
     });
-
-    body.querySelectorAll('.wz-day-head').forEach(head => {
-      head.onclick = () => {
-        const detail = document.getElementById('wz-day-detail-' + head.dataset.day);
-        detail.classList.toggle('open');
+    logEl.querySelectorAll('.wz-log-del').forEach(b=>{
+      b.onclick = async ()=>{
+        try{ await deleteDoc(doc(db,"sales", b.dataset.id)); toast("Ticket supprimé"); }
+        catch(e){ toast("Erreur — réessaie"); }
       };
     });
   }
+}
 
-  function slugForPeriod(period){
-    if(period === 'today') return todayStr();
-    if(period === 'week') return 'semaine-' + todayStr();
-    if(period === 'month') return monthStr();
-    if(period === 'year') return new Date().getFullYear().toString();
-    return todayStr();
-  }
-
-  function generateCSV(list, period){
-    let csv = "Date,Heure,Tarif,Montant (Ar)\n";
-    list.slice().sort((a,b)=> a.ts.localeCompare(b.ts)).forEach(s => {
-      const d = new Date(s.ts);
-      csv += `${d.toISOString().slice(0,10)},${d.toLocaleTimeString('fr-FR')},${s.label},${s.amount}\n`;
-    });
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chill-wifi-zone-${slugForPeriod(period)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("CSV téléchargé");
-  }
-
-  function generatePDF(list, period){
-    if(!window.jspdf){ toast("Erreur : librairie PDF non chargée"); return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const total = list.reduce((a,s)=>a+s.amount,0);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('CHILL Wi-Fi Zone — Suivi des ventes', 14, 18);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(`Période : ${PERIOD_LABELS[period] || 'Toutes les ventes'}`, 14, 25);
-    doc.text(`Exporté le ${new Date().toLocaleDateString('fr-FR')}`, 14, 31);
-    doc.text(`Total : ${fmt(total)}  (${list.length} ticket${list.length>1?'s':''})`, 14, 37);
-
-    let y = 49;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('Date', 14, y);
-    doc.text('Heure', 54, y);
-    doc.text('Tarif', 84, y);
-    doc.text('Montant', 150, y);
-    y += 4;
-    doc.setLineWidth(0.2);
-    doc.line(14, y, 196, y);
-    y += 6;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    const sorted = list.slice().sort((a,b) => b.ts.localeCompare(a.ts));
-    sorted.forEach(s => {
-      if(y > 280){
-        doc.addPage();
-        y = 20;
-      }
-      const d = new Date(s.ts);
-      doc.text(d.toISOString().slice(0,10), 14, y);
-      doc.text(d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), 54, y);
-      doc.text(s.label, 84, y);
-      doc.text(fmt(s.amount), 150, y);
-      y += 6;
-    });
-
-    doc.save(`chill-wifi-zone-${slugForPeriod(period)}.pdf`);
-    toast("PDF téléchargé");
-  }
-
-  let exportFormat = null;
-  const exportModal = document.getElementById('wz-export-modal');
-
-  function openExportModal(format){
-    exportFormat = format;
-    document.getElementById('wz-export-modal-title').textContent =
-      format === 'csv' ? 'Exporter en CSV' : 'Exporter en PDF';
-    exportModal.classList.add('show');
-  }
-
-  document.getElementById('wz-export').onclick = () => openExportModal('csv');
-  document.getElementById('wz-export-pdf').onclick = () => openExportModal('pdf');
-  document.getElementById('wz-export-modal-close').onclick = () => exportModal.classList.remove('show');
-  exportModal.onclick = (e) => { if(e.target === exportModal) exportModal.classList.remove('show'); };
-
-  exportModal.querySelectorAll('.wz-period-btn').forEach(btn => {
-    btn.onclick = () => {
-      const period = btn.dataset.period;
-      const list = filterByPeriod(period);
-      if(list.length === 0){
-        toast("Rien à exporter pour cette période");
-        return;
-      }
-      if(exportFormat === 'csv') generateCSV(list, period);
-      else generatePDF(list, period);
-      exportModal.classList.remove('show');
-    };
+// --- Service worker (installation + cache basique) ---
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
   });
-
-  load();
-})();
-            </script>
+}
+</script>
+</body>
+</html>
