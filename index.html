@@ -28,9 +28,11 @@
   .wz-sub{ color:var(--muted); font-size:12.5px; margin-top:4px; display:flex; align-items:center; gap:6px;}
   .wz-sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); display:inline-block; }
   .wz-sync-dot.offline{ background:var(--danger); }
+  .wz-sync-dot.loading{ background:var(--amber); }
   .wz-date{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:right; padding-top:3px;}
   #wz-settings-btn{ background:none; border:none; color:var(--border); font-size:14px; cursor:pointer; padding:4px 0; opacity:0.7; }
-  .wz-logo{ height:30px; width:auto; display:block; margin-bottom:6px; }
+  .wz-logo{ height:30px; width:auto; display:block; }
+  .wz-brand-row{ display:flex; align-items:center; gap:8px; }
 
   .wz-hero{ display:flex; align-items:center; gap:18px; padding:22px; background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);}
   .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none;}
@@ -143,8 +145,10 @@
 <div id="wz-root" style="display:none;">
   <div class="wz-header">
     <div>
-      <img src="logo.png" alt="Chill" class="wz-logo">
-      <div class="wz-sub"><span class="wz-sync-dot" id="wz-sync-dot"></span><span id="wz-sync-text">Synchronisé</span></div>
+      <div class="wz-brand-row">
+        <img src="logo.png" alt="Chill" class="wz-logo">
+        <span class="wz-sync-dot loading" id="wz-sync-dot"></span>
+      </div>
     </div>
     <div style="text-align:right;">
       <div class="wz-date" id="wz-date"></div>
@@ -388,9 +392,11 @@ TARIFS.forEach(t=>{
 
 async function addSale(t, atTime){
   try{
+    syncDot.classList.add('loading');
     await addDoc(salesCol, { label:t.label, amount:t.amount, ts: atTime ? Timestamp.fromDate(atTime) : Timestamp.now() });
+    syncDot.classList.remove('loading');
     toast(`+ ${fmt(t.amount)} enregistré`);
-  }catch(e){ toast("Erreur réseau — réessaie"); }
+  }catch(e){ syncDot.classList.remove('loading'); syncDot.classList.add('offline'); toast("Erreur réseau — réessaie"); }
 }
 
 let lastSaleId = null;
@@ -402,7 +408,6 @@ async function undoLast(){
 
 // --- Sync temps réel : ventes ---
 const syncDot = document.getElementById('wz-sync-dot');
-const syncText = document.getElementById('wz-sync-text');
 let sales = [];
 
 const q = query(salesCol, orderBy("ts","desc"));
@@ -412,12 +417,11 @@ onSnapshot(q, (snap)=>{
     return { id:d.id, label:data.label, amount:data.amount, ts: data.ts ? data.ts.toDate().toISOString() : new Date().toISOString() };
   });
   lastSaleId = sales.length ? sales[0].id : null;
-  syncDot.classList.remove('offline');
-  syncText.textContent = 'Synchronisé';
+  syncDot.classList.remove('offline','loading');
   render();
 }, (err)=>{
+  syncDot.classList.remove('loading');
   syncDot.classList.add('offline');
-  syncText.textContent = 'Hors ligne';
 });
 
 // --- Sync config (code + objectifs) ---
@@ -432,8 +436,8 @@ onSnapshot(goalsDocRef, (snap)=>{
   }
 }, ()=>{});
 
-window.addEventListener('online', ()=>{ syncDot.classList.remove('offline'); syncText.textContent='Synchronisé'; });
-window.addEventListener('offline', ()=>{ syncDot.classList.add('offline'); syncText.textContent='Hors ligne'; });
+window.addEventListener('online', ()=>{ syncDot.classList.remove('offline'); });
+window.addEventListener('offline', ()=>{ syncDot.classList.remove('loading'); syncDot.classList.add('offline'); });
 
 function render(){
   const today = todayStr(), month = monthStr(), weekStart = startOfWeekISO();
