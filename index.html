@@ -23,7 +23,7 @@
 
   #wz-root{ background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; max-width:480px; margin:0 auto; overflow:hidden; min-height:100vh; }
 
-  .wz-header{ padding:14px 22px 12px; display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid var(--border);}
+  .wz-header{ padding:14px 22px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border);}
   .wz-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; letter-spacing:-0.01em;}
   .wz-sub{ color:var(--muted); font-size:12.5px; margin-top:4px; display:flex; align-items:center; gap:6px;}
   .wz-sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--signal); display:inline-block; }
@@ -368,6 +368,7 @@ function tryUnlock(){
   if(lockInput.value === APP_CODE){
     lockEl.style.display = 'none';
     rootEl.style.display = 'block';
+    try{ localStorage.setItem('wz-unlocked', '1'); }catch(e){}
   } else {
     lockError.textContent = "Code incorrect";
     lockInput.value = '';
@@ -375,7 +376,15 @@ function tryUnlock(){
 }
 lockInput.addEventListener('input', ()=>{ lockError.textContent=''; if(lockInput.value.length===4) tryUnlock(); });
 lockInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
-lockInput.focus();
+
+let alreadyUnlocked = false;
+try{ alreadyUnlocked = localStorage.getItem('wz-unlocked') === '1'; }catch(e){}
+if(alreadyUnlocked){
+  lockEl.style.display = 'none';
+  rootEl.style.display = 'block';
+} else {
+  lockInput.focus();
+}
 
 document.getElementById('wz-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
 
