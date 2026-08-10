@@ -30,6 +30,8 @@
   .wz-sync-dot.offline{ background:var(--danger); }
   .wz-date{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:right; padding-top:3px;}
   #wz-settings-btn{ background:none; border:none; color:var(--border); font-size:14px; cursor:pointer; padding:4px 0; opacity:0.7; }
+  .wz-logo{ height:32px; width:auto; display:block; }
+  .wz-header-right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
 
   .wz-hero{ display:flex; align-items:center; gap:18px; padding:22px; background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);}
   .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none;}
@@ -142,11 +144,10 @@
 <div id="wz-root" style="display:none;">
   <div class="wz-header">
     <div>
-      <div class="wz-title">CHILL Wi-Fi Zone</div>
       <div class="wz-sub"><span class="wz-sync-dot" id="wz-sync-dot"></span><span id="wz-sync-text">Synchronisé</span></div>
     </div>
-    <div style="text-align:right;">
-      <div class="wz-date" id="wz-date"></div>
+    <div class="wz-header-right">
+      <img src="logo.png" alt="Chill" class="wz-logo">
       <button id="wz-settings-btn">⚙</button>
     </div>
   </div>
@@ -371,8 +372,6 @@ function tryUnlock(){
 lockInput.addEventListener('input', ()=>{ lockError.textContent=''; if(lockInput.value.length===4) tryUnlock(); });
 lockInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
 lockInput.focus();
-
-document.getElementById('wz-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
 
 // --- Tarifs ---
 const tarifsEl = document.getElementById('wz-tarifs');
@@ -887,4 +886,4 @@ if('serviceWorker' in navigator){
 }
 </script>
 </body>
-  </html>
+</html>
