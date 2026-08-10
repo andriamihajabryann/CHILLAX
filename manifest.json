@@ -3,8 +3,8 @@
   "short_name": "Chillax",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#EF4A82",
-  "theme_color": "#EF4A82",
+  "background_color": "#F84D81",
+  "theme_color": "#F84D81",
   "orientation": "portrait",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
