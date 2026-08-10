@@ -170,7 +170,7 @@
     <div class="wz-hero-stats">
       <div class="wz-stat-row"><div class="wz-stat-label">Aujourd'hui</div><div class="wz-stat-value signal" id="wz-today">0 Ar</div></div>
       <div class="wz-stat-row"><div class="wz-stat-label">Cette semaine</div><div class="wz-stat-value signal" id="wz-week">0 Ar</div></div>
-      <div class="wz-stat-row"><div class="wz-stat-label">Ce mois</div><div class="wz-stat-value amber" id="wz-month">0 Ar</div></div>
+      <div class="wz-stat-row"><div class="wz-stat-label">Ce mois-ci</div><div class="wz-stat-value amber" id="wz-month">0 Ar</div></div>
       <div class="wz-stat-row"><div class="wz-stat-label">Reste pour l'objectif</div><div class="wz-stat-value" id="wz-remain">—</div></div>
     </div>
   </div>
@@ -254,7 +254,7 @@
     <div class="wz-modal-body">
       <button class="wz-period-btn" data-period="today">Aujourd'hui</button>
       <button class="wz-period-btn" data-period="week">Cette semaine</button>
-      <button class="wz-period-btn" data-period="month">Ce mois</button>
+      <button class="wz-period-btn" data-period="month">Ce mois-ci</button>
       <button class="wz-period-btn" data-period="year">Cette année</button>
     </div>
   </div>
@@ -508,7 +508,7 @@ function renderGoals(todayTotal, weekTotal, monthTotal){
   const rows = [
     {label:"Aujourd'hui", total:todayTotal, goal:GOALS.day},
     {label:"Cette semaine", total:weekTotal, goal:GOALS.week},
-    {label:"Ce mois", total:monthTotal, goal:GOALS.month}
+    {label:"Ce mois-ci", total:monthTotal, goal:GOALS.month}
   ];
   el.innerHTML = rows.map(r=>{
     const p = r.goal>0 ? Math.min(r.total/r.goal,1) : 0;
@@ -816,7 +816,7 @@ document.getElementById('wz-backdate-add').onclick = async ()=>{
 };
 
 // --- Export CSV / PDF ---
-const PERIOD_LABELS = { today:"Aujourd'hui", week:"Cette semaine", month:"Ce mois", year:"Cette année" };
+const PERIOD_LABELS = { today:"Aujourd'hui", week:"Cette semaine", month:"Ce mois-ci", year:"Cette année" };
 function filterByPeriod(period){
   if(period==='today') return sales.filter(s=>s.ts.slice(0,10)===todayStr());
   if(period==='week'){ const start=startOfWeekISO(); return sales.filter(s=>s.ts>=start); }
