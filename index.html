@@ -881,7 +881,9 @@ chartModeModal.querySelectorAll('.wz-period-btn').forEach(btn=>{
     try{ localStorage.setItem('wz-chart-mode', CHART_MODE); }catch(e){}
     chartModeModal.classList.remove('show');
     renderChart();
-    toast(CHART_MODE==='daily' ? "Graphique journalier activé" : "Graphique cumulatif activé");
+    const modeLabels = {cumulative:"Graphique cumulatif activé", daily:"Graphique journalier activé", weekcompare:"Comparaison semaine vs semaine activée", hourly:"Vue par heure activée", breakdown:"Répartition par tarif activée"};
+    const isFirstOfMonth = (CHART_MODE==='cumulative'||CHART_MODE==='daily') && simNow().getDate()===1;
+    toast(isFirstOfMonth ? "1er du mois — vue par heure affichée" : (modeLabels[CHART_MODE] || "Graphique mis à jour"));
   };
 });
 
