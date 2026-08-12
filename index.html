@@ -544,6 +544,19 @@ function renderGoals(todayTotal, weekTotal, monthTotal){
   }).join('');
 }
 
+function niceMax(val){
+  if(val<=0) return 1;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(val)));
+  const norm = val/magnitude;
+  let niceNorm;
+  if(norm<=1) niceNorm=1;
+  else if(norm<=2) niceNorm=2;
+  else if(norm<=2.5) niceNorm=2.5;
+  else if(norm<=5) niceNorm=5;
+  else niceNorm=10;
+  return niceNorm*magnitude;
+}
+
 function svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal){
   const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
   const gridLines = [0,0.25,0.5,0.75,1].map(f=>{
@@ -588,7 +601,7 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
     });
   });
 
-  const maxVal = Math.max(1, ...series.flat());
+  const maxVal = niceMax(Math.max(1, ...series.flat()));
   const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
   const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
   const xFor = i => padL + (days.length>1 ? (i/(days.length-1))*plotW : 0);
@@ -643,7 +656,7 @@ function renderChartWeekCompare(trendEl, svgWrap, legendEl){
     prevWeekVals.push(sales.filter(s=>localDateStr(new Date(s.ts))===dPrevStr).reduce((a,s)=>a+s.amount,0));
   }
 
-  const maxVal = Math.max(1, ...thisWeekVals.filter(v=>v!==null), ...prevWeekVals);
+  const maxVal = niceMax(Math.max(1, ...thisWeekVals.filter(v=>v!==null), ...prevWeekVals));
   const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
   const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
   const xFor = i => padL + (i/6)*plotW;
@@ -680,7 +693,7 @@ function renderChartHourly(trendEl, svgWrap, legendEl){
   const hourVals = new Array(24).fill(0);
   todaySales.forEach(s=>{ hourVals[new Date(s.ts).getHours()] += s.amount; });
 
-  const maxVal = Math.max(1, ...hourVals);
+  const maxVal = niceMax(Math.max(1, ...hourVals));
   const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
   const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
   const barW = plotW/24*0.62;
