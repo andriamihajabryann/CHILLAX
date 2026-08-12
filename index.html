@@ -156,6 +156,11 @@
     </div>
   </div>
 
+  <div id="wz-sim-banner" style="display:none; align-items:center; justify-content:space-between; gap:10px; padding:10px 22px; background:var(--amber-dim); border-bottom:1px solid var(--amber);">
+    <span style="font-size:12px; color:var(--amber); font-weight:600;">👁 <span id="wz-sim-banner-date"></span> — lecture seule</span>
+    <button id="wz-sim-exit" class="wz-btn" style="flex:none; padding:6px 12px; background:var(--amber); color:#0F1521; border:none;">Retour au direct</button>
+  </div>
+
   <div class="wz-hero">
     <div class="wz-arc-wrap">
       <svg width="112" height="112" viewBox="0 0 112 112">
@@ -363,14 +368,20 @@ try{ CHART_MODE = localStorage.getItem('wz-chart-mode') || 'cumulative'; }catch(
 
 function colorForLabel(label){ const t = TARIFS.find(x=>x.label===label); return t? t.color : 'var(--signal)'; }
 function fmt(n){ return n.toLocaleString('fr-FR').replace(/,/g,' ') + " Ar"; }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function monthStr(){ return new Date().toISOString().slice(0,7); }
+let SIM_DATE = null; // 'YYYY-MM-DD' quand on visualise un jour passé en lecture seule, sinon null
+
+function simNow(){
+  if(!SIM_DATE) return new Date();
+  return new Date(SIM_DATE+'T23:59:59');
+}
+function todayStr(){ return SIM_DATE || new Date().toISOString().slice(0,10); }
+function monthStr(){ return simNow().toISOString().slice(0,7); }
 function localDateStr(d){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
 function startOfWeekISO(){
-  const d = new Date(); const day = d.getDay();
+  const d = simNow(); const day = d.getDay();
   const diff = (day===0?-6:1) - day;
   d.setDate(d.getDate()+diff); d.setHours(0,0,0,0);
   return d.toISOString();
@@ -422,6 +433,7 @@ TARIFS.forEach(t=>{
 });
 
 async function addSale(t, atTime){
+  if(SIM_DATE){ toast("Mode lecture seule — retourne au direct pour éditer"); return; }
   try{
     syncDot.classList.add('loading');
     await addDoc(salesCol, { label:t.label, amount:t.amount, ts: atTime ? Timestamp.fromDate(atTime) : Timestamp.now() });
@@ -475,9 +487,9 @@ setInterval(()=>{ if(rootEl.style.display!=='none') render(); }, 60000);
 
 function render(){
   const today = todayStr(), month = monthStr(), weekStart = startOfWeekISO();
-  const todaySales = sales.filter(s=>s.ts.slice(0,10)===today);
-  const weekSales = sales.filter(s=>s.ts>=weekStart);
-  const monthSales = sales.filter(s=>s.ts.slice(0,7)===month);
+  const todaySales = sales.filter(s=>localDateStr(new Date(s.ts))===today);
+  const weekSales = sales.filter(s=>s.ts>=weekStart && (!SIM_DATE || s.ts<=simNow().toISOString()));
+  const monthSales = sales.filter(s=>s.ts.slice(0,7)===month && (!SIM_DATE || s.ts<=simNow().toISOString()));
 
   const todayTotal = todaySales.reduce((a,s)=>a+s.amount,0);
   const weekTotal = weekSales.reduce((a,s)=>a+s.amount,0);
@@ -601,18 +613,18 @@ function renderChart(){
 }
 
 function renderChartTrend(trendEl, svgWrap, legendEl){
-  const now = new Date();
+  const now = simNow();
   const daysInMonthSoFar = now.getDate();
   const days = [];
   for(let i=daysInMonthSoFar-1;i>=0;i--){
-    const d = new Date(); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
+    const d = simNow(); d.setDate(d.getDate()-i);
+    days.push(localDateStr(d));
   }
 
   const series = CHART_TARIFS.map(t=>{
     let cum=0;
     return days.map(d=>{
-      const dayTotal = sales.filter(s=>s.ts.slice(0,10)===d && s.label===t.label).reduce((a,s)=>a+s.amount,0);
+      const dayTotal = sales.filter(s=>localDateStr(new Date(s.ts))===d && s.label===t.label).reduce((a,s)=>a+s.amount,0);
       if(CHART_MODE==='daily') return dayTotal;
       cum += dayTotal;
       return cum;
@@ -656,7 +668,7 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
 }
 
 function renderChartWeekCompare(trendEl, svgWrap, legendEl){
-  const now = new Date();
+  const now = simNow();
   const day = now.getDay();
   const diffToMonday = (day===0?-6:1) - day;
   const weekStart = new Date(now); weekStart.setDate(weekStart.getDate()+diffToMonday); weekStart.setHours(0,0,0,0);
@@ -705,11 +717,9 @@ function renderChartWeekCompare(trendEl, svgWrap, legendEl){
   }
 }
 
-function renderChartHourly(trendEl, svgWrap, legendEl){
-  const today = todayStr();
-  const todaySales = sales.filter(s=>s.ts.slice(0,10)===today);
+function hourlyBarsSvg(daySales){
   const hourVals = new Array(24).fill(0);
-  todaySales.forEach(s=>{ hourVals[new Date(s.ts).getHours()] += s.amount; });
+  daySales.forEach(s=>{ hourVals[new Date(s.ts).getHours()] += s.amount; });
 
   const maxVal = niceMax(Math.max(1, ...hourVals));
   const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
@@ -729,11 +739,19 @@ function renderChartHourly(trendEl, svgWrap, legendEl){
     return `<text x="${x.toFixed(1)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${h}h</text>`;
   }).join('');
 
-  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${bars}${hourLabels}${yLabels}</svg>`;
-  legendEl.innerHTML = `<span style="font-size:10.5px;color:var(--muted);">Ventes d'aujourd'hui par heure</span>`;
+  return {svg:`<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${bars}${hourLabels}${yLabels}</svg>`, hourVals};
+}
+
+function renderChartHourly(trendEl, svgWrap, legendEl){
+  const today = todayStr();
+  const todaySales = sales.filter(s=>localDateStr(new Date(s.ts))===today);
+  const {svg, hourVals} = hourlyBarsSvg(todaySales);
+
+  svgWrap.innerHTML = svg;
+  legendEl.innerHTML = `<span style="font-size:10.5px;color:var(--muted);">Ventes ${SIM_DATE?'de ce jour':"d'aujourd'hui"} par heure</span>`;
 
   trendEl.className='';
-  if(todaySales.length===0){ trendEl.textContent='Aucune vente aujourd\'hui'; }
+  if(todaySales.length===0){ trendEl.textContent='Aucune vente ce jour'; }
   else{
     const peakHour = hourVals.indexOf(Math.max(...hourVals));
     trendEl.textContent = `⏰ Pic à ${peakHour}h-${peakHour+1}h`;
@@ -742,7 +760,7 @@ function renderChartHourly(trendEl, svgWrap, legendEl){
 
 function renderChartBreakdown(trendEl, svgWrap, legendEl){
   const month = monthStr();
-  const monthSales = sales.filter(s=>s.ts.slice(0,7)===month);
+  const monthSales = sales.filter(s=>s.ts.slice(0,7)===month && (!SIM_DATE || s.ts<=simNow().toISOString()));
   const totals = TARIFS.map(t=> monthSales.filter(s=>s.label===t.label).reduce((a,s)=>a+s.amount,0));
   const grandTotal = totals.reduce((a,v)=>a+v,0);
 
@@ -816,11 +834,13 @@ let pendingDeleteIds = [];
 const confirmModal = document.getElementById('wz-confirm-modal');
 const confirmDetailEl = document.getElementById('wz-confirm-detail');
 function askDeleteConfirm(id){
+  if(SIM_DATE){ toast("Mode lecture seule — retourne au direct pour éditer"); return; }
   pendingDeleteIds=[id];
   confirmDetailEl.textContent="Cette action est définitive.";
   confirmModal.classList.add('show');
 }
 function askBulkDeleteConfirm(ids){
+  if(SIM_DATE){ toast("Mode lecture seule — retourne au direct pour éditer"); return; }
   pendingDeleteIds=ids.slice();
   confirmDetailEl.textContent=`${ids.length} ticket${ids.length>1?'s':''} seront supprimés.`;
   confirmModal.classList.add('show');
@@ -921,8 +941,8 @@ function renderHistory(){
   const today = todayStr();
   const byDay = {};
   sales.forEach(s=>{
-    const d = s.ts.slice(0,10);
-    if(d===today) return;
+    const d = localDateStr(new Date(s.ts));
+    if(d===today && !SIM_DATE) return;
     if(!byDay[d]) byDay[d]=[];
     byDay[d].push(s);
   });
@@ -941,6 +961,7 @@ function renderHistory(){
         <div class="wz-day-total">${fmt(total)}</div>
       </div>
       <div class="wz-day-detail" id="wz-day-detail-${d}">
+        <button class="wz-lock-btn" data-viewday="${d}" style="width:100%;margin-bottom:10px;">👁 Visualiser ce jour</button>
         ${tickets.map(t=>{
           const time = new Date(t.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
           const dot = `<span style="width:7px;height:7px;border-radius:50%;background:${colorForLabel(t.label)};display:inline-block;margin-right:6px;"></span>`;
@@ -951,6 +972,9 @@ function renderHistory(){
   });
   body.querySelectorAll('.wz-day-head').forEach(head=>{
     head.onclick = ()=>{ document.getElementById('wz-day-detail-'+head.dataset.day).classList.toggle('open'); };
+  });
+  body.querySelectorAll('[data-viewday]').forEach(btn=>{
+    btn.onclick = (e)=>{ e.stopPropagation(); enterSimMode(btn.dataset.viewday); };
   });
 }
 
@@ -1104,6 +1128,38 @@ exportModal.querySelectorAll('.wz-period-btn').forEach(btn=>{
     exportModal.classList.remove('show');
   };
 });
+
+// --- Mode simulation (visualiser un jour passé en lecture seule) ---
+const simBanner = document.getElementById('wz-sim-banner');
+const simBannerDate = document.getElementById('wz-sim-banner-date');
+const tarifsGridEl = document.getElementById('wz-tarifs');
+const footerEl = document.querySelector('.wz-footer');
+
+function enterSimMode(dateStr){
+  SIM_DATE = dateStr;
+  historyModal.classList.remove('show');
+  const label = new Date(dateStr+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  simBannerDate.textContent = label;
+  simBanner.style.display = 'flex';
+  document.getElementById('wz-date').textContent = new Date(dateStr+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  tarifsGridEl.style.opacity = '0.4';
+  tarifsGridEl.style.pointerEvents = 'none';
+  selectToggleBtn.style.display = 'none';
+  footerEl.style.display = 'none';
+  exitSelectionMode();
+  render();
+}
+function exitSimMode(){
+  SIM_DATE = null;
+  simBanner.style.display = 'none';
+  document.getElementById('wz-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  tarifsGridEl.style.opacity = '';
+  tarifsGridEl.style.pointerEvents = '';
+  selectToggleBtn.style.display = '';
+  footerEl.style.display = '';
+  render();
+}
+document.getElementById('wz-sim-exit').onclick = exitSimMode;
 
 // --- Service worker ---
 if('serviceWorker' in navigator){
