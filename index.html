@@ -609,6 +609,9 @@ function renderChart(){
   if(CHART_MODE==='weekcompare') return renderChartWeekCompare(trendEl, svgWrap, legendEl);
   if(CHART_MODE==='hourly') return renderChartHourly(trendEl, svgWrap, legendEl);
   if(CHART_MODE==='breakdown') return renderChartBreakdown(trendEl, svgWrap, legendEl);
+  if((CHART_MODE==='cumulative' || CHART_MODE==='daily') && simNow().getDate()===1){
+    return renderChartHourly(trendEl, svgWrap, legendEl, true);
+  }
   return renderChartTrend(trendEl, svgWrap, legendEl);
 }
 
@@ -742,13 +745,13 @@ function hourlyBarsSvg(daySales){
   return {svg:`<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${bars}${hourLabels}${yLabels}</svg>`, hourVals};
 }
 
-function renderChartHourly(trendEl, svgWrap, legendEl){
+function renderChartHourly(trendEl, svgWrap, legendEl, autoFallback){
   const today = todayStr();
   const todaySales = sales.filter(s=>localDateStr(new Date(s.ts))===today);
   const {svg, hourVals} = hourlyBarsSvg(todaySales);
 
   svgWrap.innerHTML = svg;
-  legendEl.innerHTML = `<span style="font-size:10.5px;color:var(--muted);">Ventes ${SIM_DATE?'de ce jour':"d'aujourd'hui"} par heure</span>`;
+  legendEl.innerHTML = `<span style="font-size:10.5px;color:var(--muted);">${autoFallback ? 'Vue par heure (1er du mois — pas assez de jours pour une courbe)' : `Ventes ${SIM_DATE?'de ce jour':"d'aujourd'hui"} par heure`}</span>`;
 
   trendEl.className='';
   if(todaySales.length===0){ trendEl.textContent='Aucune vente ce jour'; }
