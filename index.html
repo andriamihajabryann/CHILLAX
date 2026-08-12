@@ -631,7 +631,6 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
       let cum=0;
       return labels.map(h=>{
         const hourTotal = daySales.filter(s=> s.label===t.label && new Date(s.ts).getHours()===h).reduce((a,s)=>a+s.amount,0);
-        if(CHART_MODE==='daily') return hourTotal;
         cum += hourTotal;
         return cum;
       });
