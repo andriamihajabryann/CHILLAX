@@ -616,12 +616,16 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
   const now = simNow();
   const daysInMonthSoFar = now.getDate();
   const isFirstDay = daysInMonthSoFar===1;
-  const monthDayStr = localDateStr(now);
+  const HOUR_START = 6, HOUR_END = 23;
 
-  let labels, series;
+  let labels, series, xFor, dayLabels;
+
   if(isFirstDay){
-    // 1er du mois : pas assez de jours pour un axe journalier — on bascule sur un axe horaire (0h-23h)
-    labels = Array.from({length:24}, (_,h)=>h);
+    // Jour 1 du mois : un seul jour de données, pas assez pour un axe journalier lisible.
+    // On zoome sur ce jour en heures (6h-23h) — même donnée que la vue normale, juste à la loupe.
+    const monthDayStr = localDateStr(now);
+    labels = [];
+    for(let h=HOUR_START; h<=HOUR_END; h++) labels.push(h);
     const daySales = sales.filter(s=>localDateStr(new Date(s.ts))===monthDayStr);
     series = CHART_TARIFS.map(t=>{
       let cum=0;
@@ -632,40 +636,59 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
         return cum;
       });
     });
-  } else {
-    labels = [];
-    for(let i=daysInMonthSoFar-1;i>=0;i--){
-      const d = simNow(); d.setDate(d.getDate()-i);
-      labels.push(localDateStr(d));
-    }
-    series = CHART_TARIFS.map(t=>{
-      let cum=0;
-      return labels.map(d=>{
-        const dayTotal = sales.filter(s=>localDateStr(new Date(s.ts))===d && s.label===t.label).reduce((a,s)=>a+s.amount,0);
-        if(CHART_MODE==='daily') return dayTotal;
-        cum += dayTotal;
-        return cum;
-      });
-    });
+
+    const maxVal = niceMax(Math.max(1, ...series.flat()));
+    const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
+    const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
+    xFor = i => padL + (labels.length>1 ? (i/(labels.length-1))*plotW : 0);
+    const yFor = v => padT + plotH - (v/maxVal)*plotH;
+
+    dayLabels = [HOUR_START,11,17,HOUR_END].map(h=>{
+      const i = labels.indexOf(h);
+      const x = xFor(i);
+      return `<text x="${x.toFixed(1)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${h}h</text>`;
+    }).join('');
+
+    const polylines = series.map((vals,idx)=>{
+      const pts = vals.map((v,i)=>[xFor(i), yFor(v)]);
+      return `<path d="${smoothPath(pts)}" fill="none" stroke="${CHART_TARIFS[idx].color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }).join('');
+
+    svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${polylines}${dayLabels}${yLabels}</svg>`;
+    legendEl.innerHTML = CHART_TARIFS.map(t=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);margin-right:14px;margin-bottom:4px;"><span style="width:11px;height:3px;border-radius:2px;background:${t.color};display:inline-block;"></span>${t.label}</span>`).join('');
+
+    trendEl.className='';
+    trendEl.textContent = '🔍 1er du mois — zoom heures (6h-23h)';
+    return;
   }
+
+  labels = [];
+  for(let i=daysInMonthSoFar-1;i>=0;i--){
+    const d = simNow(); d.setDate(d.getDate()-i);
+    labels.push(localDateStr(d));
+  }
+  series = CHART_TARIFS.map(t=>{
+    let cum=0;
+    return labels.map(d=>{
+      const dayTotal = sales.filter(s=>localDateStr(new Date(s.ts))===d && s.label===t.label).reduce((a,s)=>a+s.amount,0);
+      if(CHART_MODE==='daily') return dayTotal;
+      cum += dayTotal;
+      return cum;
+    });
+  });
   const days = labels;
 
   const maxVal = niceMax(Math.max(1, ...series.flat()));
   const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
   const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
-  const xFor = i => padL + (days.length>1 ? (i/(days.length-1))*plotW : 0);
+  xFor = i => padL + (days.length>1 ? (i/(days.length-1))*plotW : 0);
   const yFor = v => padT + plotH - (v/maxVal)*plotH;
 
-  const dayLabels = isFirstDay
-    ? [0,6,12,18,23].map(h=>{
-        const x = padL + (h/23)*plotW;
-        return `<text x="${x.toFixed(1)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${h}h</text>`;
-      }).join('')
-    : days.map((d,i)=>{
-        if(i%3!==0 && i!==days.length-1) return '';
-        const lbl = new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-        return `<text x="${xFor(i)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${lbl}</text>`;
-      }).join('');
+  dayLabels = days.map((d,i)=>{
+    if(i%3!==0 && i!==days.length-1) return '';
+    const lbl = new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<text x="${xFor(i)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${lbl}</text>`;
+  }).join('');
   const polylines = series.map((vals,idx)=>{
     const pts = vals.map((v,i)=>[xFor(i), yFor(v)]);
     return `<path d="${smoothPath(pts)}" fill="none" stroke="${CHART_TARIFS[idx].color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -673,12 +696,6 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
 
   svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${polylines}${dayLabels}${yLabels}</svg>`;
   legendEl.innerHTML = CHART_TARIFS.map(t=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);margin-right:14px;margin-bottom:4px;"><span style="width:11px;height:3px;border-radius:2px;background:${t.color};display:inline-block;"></span>${t.label}</span>`).join('');
-
-  if(isFirstDay){
-    trendEl.className='';
-    trendEl.textContent = '🕐 1er du mois — vue par heure';
-    return;
-  }
 
   const weekStart = startOfWeekISO();
   const thisWeekTotal = sales.filter(s=>s.ts>=weekStart).reduce((a,s)=>a+s.amount,0);
