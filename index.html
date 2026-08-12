@@ -230,6 +230,9 @@
     <div class="wz-modal-body">
       <button class="wz-period-btn" data-mode="cumulative">Cumulatif <span style="color:var(--muted);font-weight:400;">— s'accumule du 1er au dernier jour</span></button>
       <button class="wz-period-btn" data-mode="daily">Journalier <span style="color:var(--muted);font-weight:400;">— repart à zéro chaque jour</span></button>
+      <button class="wz-period-btn" data-mode="weekcompare">Semaine vs semaine <span style="color:var(--muted);font-weight:400;">— compare à la semaine dernière</span></button>
+      <button class="wz-period-btn" data-mode="hourly">Par heure <span style="color:var(--muted);font-weight:400;">— répartition des ventes du jour</span></button>
+      <button class="wz-period-btn" data-mode="breakdown">Répartition tarifs <span style="color:var(--muted);font-weight:400;">— part de chaque forfait</span></button>
     </div>
   </div>
 </div>
@@ -534,11 +537,32 @@ function renderGoals(todayTotal, weekTotal, monthTotal){
   }).join('');
 }
 
+function svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal){
+  const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
+  const gridLines = [0,0.25,0.5,0.75,1].map(f=>{
+    const y = padT+plotH-f*plotH;
+    return `<line x1="${padL}" y1="${y}" x2="${svgW-padR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+  }).join('');
+  const yLabels = [0,0.5,1].map(f=>{
+    const y = padT+plotH-f*plotH; const val=Math.round(f*maxVal);
+    const label = val>=1000 ? Math.round(val/1000)+'k' : val;
+    return `<text x="${padL-6}" y="${y+3}" font-size="8" fill="var(--muted)" text-anchor="end" font-family="'JetBrains Mono', monospace">${label}</text>`;
+  }).join('');
+  return {gridLines, yLabels, plotW, plotH};
+}
+
 function renderChart(){
   const trendEl = document.getElementById('wz-chart-trend');
   const svgWrap = document.getElementById('wz-chart-svg');
   const legendEl = document.getElementById('wz-chart-legend');
 
+  if(CHART_MODE==='weekcompare') return renderChartWeekCompare(trendEl, svgWrap, legendEl);
+  if(CHART_MODE==='hourly') return renderChartHourly(trendEl, svgWrap, legendEl);
+  if(CHART_MODE==='breakdown') return renderChartBreakdown(trendEl, svgWrap, legendEl);
+  return renderChartTrend(trendEl, svgWrap, legendEl);
+}
+
+function renderChartTrend(trendEl, svgWrap, legendEl){
   const now = new Date();
   const daysInMonthSoFar = now.getDate();
   const days = [];
@@ -559,19 +583,10 @@ function renderChart(){
 
   const maxVal = Math.max(1, ...series.flat());
   const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
-  const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
+  const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
   const xFor = i => padL + (days.length>1 ? (i/(days.length-1))*plotW : 0);
   const yFor = v => padT + plotH - (v/maxVal)*plotH;
 
-  const gridLines = [0,0.25,0.5,0.75,1].map(f=>{
-    const y = padT+plotH-f*plotH;
-    return `<line x1="${padL}" y1="${y}" x2="${svgW-padR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
-  }).join('');
-  const yLabels = [0,0.5,1].map(f=>{
-    const y = padT+plotH-f*plotH; const val=Math.round(f*maxVal);
-    const label = val>=1000 ? Math.round(val/1000)+'k' : val;
-    return `<text x="${padL-6}" y="${y+3}" font-size="8" fill="var(--muted)" text-anchor="end" font-family="'JetBrains Mono', monospace">${label}</text>`;
-  }).join('');
   const dayLabels = days.map((d,i)=>{
     if(i%3!==0 && i!==days.length-1) return '';
     const lbl = new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
@@ -600,6 +615,125 @@ function renderChart(){
     trendEl.textContent = (pct>=0?'📈 +':'📉 ')+pct+'% vs sem. dernière';
     trendEl.className = pct>=0?'up':'down';
   }
+}
+
+function renderChartWeekCompare(trendEl, svgWrap, legendEl){
+  const weekStart = new Date(startOfWeekISO());
+  const prevWeekStart = new Date(weekStart); prevWeekStart.setDate(prevWeekStart.getDate()-7);
+
+  const dayNames = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const thisWeekVals = [], prevWeekVals = [];
+  for(let i=0;i<7;i++){
+    const dThis = new Date(weekStart); dThis.setDate(dThis.getDate()+i);
+    const dPrev = new Date(prevWeekStart); dPrev.setDate(dPrev.getDate()+i);
+    const dThisStr = dThis.toISOString().slice(0,10);
+    const dPrevStr = dPrev.toISOString().slice(0,10);
+    thisWeekVals.push(sales.filter(s=>s.ts.slice(0,10)===dThisStr).reduce((a,s)=>a+s.amount,0));
+    prevWeekVals.push(sales.filter(s=>s.ts.slice(0,10)===dPrevStr).reduce((a,s)=>a+s.amount,0));
+  }
+
+  const maxVal = Math.max(1, ...thisWeekVals, ...prevWeekVals);
+  const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
+  const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
+  const xFor = i => padL + (i/6)*plotW;
+  const yFor = v => padT + plotH - (v/maxVal)*plotH;
+
+  const dayLabels = dayNames.map((n,i)=>`<text x="${xFor(i)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${n}</text>`).join('');
+  const lineFor = (vals,color)=>{
+    const points = vals.map((v,i)=>`${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`).join(' ');
+    return `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  };
+  const polylines = lineFor(prevWeekVals,'#7E8FA3') + lineFor(thisWeekVals,'var(--signal)');
+
+  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${polylines}${dayLabels}${yLabels}</svg>`;
+  legendEl.innerHTML = `
+    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);margin-right:14px;"><span style="width:11px;height:3px;border-radius:2px;background:var(--signal);display:inline-block;"></span>Cette semaine</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);"><span style="width:11px;height:3px;border-radius:2px;background:#7E8FA3;display:inline-block;"></span>Semaine dernière</span>`;
+
+  const thisTotal = thisWeekVals.reduce((a,v)=>a+v,0);
+  const prevTotal = prevWeekVals.reduce((a,v)=>a+v,0);
+  trendEl.className='';
+  if(thisTotal===0 && prevTotal===0){ trendEl.textContent='Pas encore assez de données'; }
+  else if(prevTotal===0){ trendEl.textContent='📈 Nouvelle activité'; trendEl.className='up'; }
+  else{
+    const pct = Math.round(((thisTotal-prevTotal)/prevTotal)*100);
+    trendEl.textContent = (pct>=0?'📈 +':'📉 ')+pct+'% vs sem. dernière';
+    trendEl.className = pct>=0?'up':'down';
+  }
+}
+
+function renderChartHourly(trendEl, svgWrap, legendEl){
+  const today = todayStr();
+  const todaySales = sales.filter(s=>s.ts.slice(0,10)===today);
+  const hourVals = new Array(24).fill(0);
+  todaySales.forEach(s=>{ hourVals[new Date(s.ts).getHours()] += s.amount; });
+
+  const maxVal = Math.max(1, ...hourVals);
+  const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
+  const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
+  const barW = plotW/24*0.62;
+  const xFor = i => padL + (i/24)*plotW + (plotW/24 - barW)/2;
+  const yFor = v => padT + plotH - (v/maxVal)*plotH;
+
+  const {gridLines, yLabels} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
+  const bars = hourVals.map((v,i)=>{
+    if(v<=0) return '';
+    const y = yFor(v);
+    return `<rect x="${xFor(i).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(padT+plotH-y).toFixed(1)}" rx="2" fill="var(--signal)"/>`;
+  }).join('');
+  const hourLabels = [0,6,12,18,23].map(h=>{
+    const x = padL + (h/24)*plotW + (plotW/24)/2;
+    return `<text x="${x.toFixed(1)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${h}h</text>`;
+  }).join('');
+
+  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${bars}${hourLabels}${yLabels}</svg>`;
+  legendEl.innerHTML = `<span style="font-size:10.5px;color:var(--muted);">Ventes d'aujourd'hui par heure</span>`;
+
+  trendEl.className='';
+  if(todaySales.length===0){ trendEl.textContent='Aucune vente aujourd\'hui'; }
+  else{
+    const peakHour = hourVals.indexOf(Math.max(...hourVals));
+    trendEl.textContent = `⏰ Pic à ${peakHour}h-${peakHour+1}h`;
+  }
+}
+
+function renderChartBreakdown(trendEl, svgWrap, legendEl){
+  const month = monthStr();
+  const monthSales = sales.filter(s=>s.ts.slice(0,7)===month);
+  const totals = TARIFS.map(t=> monthSales.filter(s=>s.label===t.label).reduce((a,s)=>a+s.amount,0));
+  const grandTotal = totals.reduce((a,v)=>a+v,0);
+
+  const svgSize=190, cx=svgSize/2, cy=svgSize/2, r=78, innerR=46;
+  let slices = '';
+  if(grandTotal>0){
+    let angleStart = -Math.PI/2;
+    TARIFS.forEach((t,i)=>{
+      const val = totals[i];
+      if(val<=0) return;
+      const angle = (val/grandTotal)*Math.PI*2;
+      const angleEnd = angleStart + angle;
+      const x1=cx+r*Math.cos(angleStart), y1=cy+r*Math.sin(angleStart);
+      const x2=cx+r*Math.cos(angleEnd), y2=cy+r*Math.sin(angleEnd);
+      const ix1=cx+innerR*Math.cos(angleEnd), iy1=cy+innerR*Math.sin(angleEnd);
+      const ix2=cx+innerR*Math.cos(angleStart), iy2=cy+innerR*Math.sin(angleStart);
+      const largeArc = angle>Math.PI ? 1 : 0;
+      slices += `<path d="M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${largeArc} 1 ${x2.toFixed(2)},${y2.toFixed(2)} L${ix1.toFixed(2)},${iy1.toFixed(2)} A${innerR},${innerR} 0 ${largeArc} 0 ${ix2.toFixed(2)},${iy2.toFixed(2)} Z" fill="${t.color}"/>`;
+      angleStart = angleEnd;
+    });
+  }
+  const svgW=600, svgH=190;
+  const offsetX = (svgW - svgSize)/2;
+  svgWrap.innerHTML = grandTotal>0
+    ? `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;"><g transform="translate(${offsetX},0)">${slices}<text x="${cx}" y="${cy-3}" font-size="15" font-weight="700" fill="var(--text)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${grandTotal>=1000?Math.round(grandTotal/1000)+'k':grandTotal}</text><text x="${cx}" y="${cy+13}" font-size="8" fill="var(--muted)" text-anchor="middle">Ar ce mois-ci</text></g></svg>`
+    : `<div class="wz-modal-empty" style="padding:20px 0;">Pas encore de ventes ce mois-ci</div>`;
+
+  legendEl.innerHTML = TARIFS.map((t,i)=>{
+    const pct = grandTotal>0 ? Math.round(totals[i]/grandTotal*100) : 0;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);margin-right:14px;margin-bottom:4px;"><span style="width:9px;height:9px;border-radius:50%;background:${t.color};display:inline-block;"></span>${t.label} ${pct}%</span>`;
+  }).join('');
+
+  trendEl.className='';
+  trendEl.textContent = grandTotal>0 ? '🥧 Répartition du mois-ci' : 'Pas encore assez de données';
 }
 
 // --- Sélection multiple ---
