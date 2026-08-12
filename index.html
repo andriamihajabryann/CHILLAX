@@ -187,6 +187,14 @@
   <div class="wz-goals" id="wz-goals"></div>
 
   <div class="wz-section-label">
+    <span>Vue globale — tous tickets</span>
+    <span id="wz-chart-global-trend" style="font-family:'JetBrains Mono',monospace;"></span>
+  </div>
+  <div class="wz-chart-wrap">
+    <div id="wz-chart-global-svg"></div>
+  </div>
+
+  <div class="wz-section-label">
     <span id="wz-chart-trend" style="font-family:'JetBrains Mono',monospace;"></span>
   </div>
   <div class="wz-chart-wrap">
@@ -233,8 +241,8 @@
   <div class="wz-modal-panel">
     <div class="wz-modal-head"><div class="wz-modal-title">Type de graphique</div><button class="wz-modal-close" id="wz-chart-mode-modal-close">✕</button></div>
     <div class="wz-modal-body">
-      <button class="wz-period-btn" data-mode="cumulative">Cumulatif <span style="color:var(--muted);font-weight:400;">— s'accumule du 1er au dernier jour</span></button>
       <button class="wz-period-btn" data-mode="daily">Journalier <span style="color:var(--muted);font-weight:400;">— repart à zéro chaque jour</span></button>
+      <button class="wz-period-btn" data-mode="cumulative">Cumulatif <span style="color:var(--muted);font-weight:400;">— s'accumule du 1er au dernier jour</span></button>
       <button class="wz-period-btn" data-mode="weekcompare">Semaine vs semaine <span style="color:var(--muted);font-weight:400;">— compare à la semaine dernière</span></button>
       <button class="wz-period-btn" data-mode="hourly">Par heure <span style="color:var(--muted);font-weight:400;">— répartition des ventes du jour</span></button>
       <button class="wz-period-btn" data-mode="breakdown">Répartition tarifs <span style="color:var(--muted);font-weight:400;">— part de chaque forfait</span></button>
@@ -602,6 +610,8 @@ function svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal){
 }
 
 function renderChart(){
+  renderChartGlobal();
+
   const trendEl = document.getElementById('wz-chart-trend');
   const svgWrap = document.getElementById('wz-chart-svg');
   const legendEl = document.getElementById('wz-chart-legend');
@@ -610,6 +620,85 @@ function renderChart(){
   if(CHART_MODE==='hourly') return renderChartHourly(trendEl, svgWrap, legendEl);
   if(CHART_MODE==='breakdown') return renderChartBreakdown(trendEl, svgWrap, legendEl);
   return renderChartTrend(trendEl, svgWrap, legendEl);
+}
+
+// Vue globale : tous les tickets confondus, jour par jour, repart à zéro chaque jour.
+// Toujours visible au-dessus des autres graphiques, indépendamment du "Type de graphique" choisi.
+function renderChartGlobal(){
+  const trendEl = document.getElementById('wz-chart-global-trend');
+  const svgWrap = document.getElementById('wz-chart-global-svg');
+  if(!trendEl || !svgWrap) return;
+
+  const now = simNow();
+  const daysInMonthSoFar = now.getDate();
+  const isFirstDay = daysInMonthSoFar===1;
+  const HOUR_START = 6, HOUR_END = 23;
+
+  let labels, xLabelsHtml, xFor, values;
+
+  if(isFirstDay){
+    // 1er du mois : zoom par heure, comme les autres vues dans ce cas.
+    const monthDayStr = localDateStr(now);
+    labels = [];
+    for(let h=HOUR_START; h<=HOUR_END; h++) labels.push(h);
+    const daySales = sales.filter(s=>localDateStr(new Date(s.ts))===monthDayStr);
+    values = labels.map(h=> daySales.filter(s=> new Date(s.ts).getHours()===h).reduce((a,s)=>a+s.amount,0));
+
+    const maxVal = niceMax(Math.max(1, ...values));
+    const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
+    const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
+    xFor = i => padL + (labels.length>1 ? (i/(labels.length-1))*plotW : 0);
+    const yFor = v => padT + plotH - (v/maxVal)*plotH;
+
+    xLabelsHtml = [HOUR_START,11,17,HOUR_END].map(h=>{
+      const i = labels.indexOf(h);
+      const x = xFor(i);
+      return `<text x="${x.toFixed(1)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${h}h</text>`;
+    }).join('');
+
+    const pts = values.map((v,i)=>[xFor(i), yFor(v)]);
+    const path = `<path d="${smoothPath(pts)}" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+    svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${path}${xLabelsHtml}${yLabels}</svg>`;
+    trendEl.className='';
+    trendEl.textContent = '🔍 1er du mois — zoom heures';
+    return;
+  }
+
+  labels = [];
+  for(let i=daysInMonthSoFar-1;i>=0;i--){
+    const d = simNow(); d.setDate(d.getDate()-i);
+    labels.push(localDateStr(d));
+  }
+  values = labels.map(d => sales.filter(s=>localDateStr(new Date(s.ts))===d).reduce((a,s)=>a+s.amount,0));
+
+  const maxVal = niceMax(Math.max(1, ...values));
+  const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
+  const {gridLines, yLabels, plotW, plotH} = svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal);
+  xFor = i => padL + (labels.length>1 ? (i/(labels.length-1))*plotW : 0);
+  const yFor = v => padT + plotH - (v/maxVal)*plotH;
+
+  xLabelsHtml = labels.map((d,i)=>{
+    if(i%3!==0 && i!==labels.length-1) return '';
+    const lbl = new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<text x="${xFor(i)}" y="${svgH-4}" font-size="7.5" fill="var(--muted)" text-anchor="middle" font-family="'JetBrains Mono', monospace">${lbl}</text>`;
+  }).join('');
+
+  const pts = values.map((v,i)=>[xFor(i), yFor(v)]);
+  const path = `<path d="${smoothPath(pts)}" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${path}${xLabelsHtml}${yLabels}</svg>`;
+
+  const todaysTotal = values[values.length-1] || 0;
+  const yestTotal = values.length>1 ? values[values.length-2] : 0;
+  trendEl.className='';
+  if(todaysTotal===0 && yestTotal===0){ trendEl.textContent=''; }
+  else if(yestTotal===0){ trendEl.textContent='📈 nouvelle activité'; trendEl.className='up'; }
+  else{
+    const pct = Math.round(((todaysTotal-yestTotal)/yestTotal)*100);
+    trendEl.textContent = (pct>=0?'📈 +':'📉 ')+pct+'% vs hier';
+    trendEl.className = pct>=0?'up':'down';
+  }
 }
 
 function renderChartTrend(trendEl, svgWrap, legendEl){
