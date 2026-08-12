@@ -218,6 +218,18 @@
     <div class="wz-modal-body">
       <button class="wz-period-btn" id="wz-code-settings-btn">🔑 Code de l'app</button>
       <button class="wz-period-btn" id="wz-backdate-btn">🕐 Date antérieure</button>
+      <button class="wz-period-btn" id="wz-chart-mode-btn">📊 Type de graphique</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal type de graphique -->
+<div class="wz-modal-overlay center" id="wz-chart-mode-modal">
+  <div class="wz-modal-panel">
+    <div class="wz-modal-head"><div class="wz-modal-title">Type de graphique</div><button class="wz-modal-close" id="wz-chart-mode-modal-close">✕</button></div>
+    <div class="wz-modal-body">
+      <button class="wz-period-btn" data-mode="cumulative">Cumulatif <span style="color:var(--muted);font-weight:400;">— s'accumule du 1er au dernier jour</span></button>
+      <button class="wz-period-btn" data-mode="daily">Journalier <span style="color:var(--muted);font-weight:400;">— repart à zéro chaque jour</span></button>
     </div>
   </div>
 </div>
@@ -342,6 +354,9 @@ const TARIFS = [
   { label: "1 mois", amount: 20000, color: "#F472B6" }
 ];
 const CHART_TARIFS = TARIFS.filter(t => t.label !== "1 mois");
+
+let CHART_MODE = 'cumulative';
+try{ CHART_MODE = localStorage.getItem('wz-chart-mode') || 'cumulative'; }catch(e){}
 
 function colorForLabel(label){ const t = TARIFS.find(x=>x.label===label); return t? t.color : 'var(--signal)'; }
 function fmt(n){ return n.toLocaleString('fr-FR').replace(/,/g,' ') + " Ar"; }
@@ -536,6 +551,7 @@ function renderChart(){
     let cum=0;
     return days.map(d=>{
       const dayTotal = sales.filter(s=>s.ts.slice(0,10)===d && s.label===t.label).reduce((a,s)=>a+s.amount,0);
+      if(CHART_MODE==='daily') return dayTotal;
       cum += dayTotal;
       return cum;
     });
@@ -651,6 +667,23 @@ const settingsModal = document.getElementById('wz-settings-modal');
 document.getElementById('wz-settings-btn').onclick = ()=> settingsModal.classList.add('show');
 document.getElementById('wz-settings-modal-close').onclick = ()=> settingsModal.classList.remove('show');
 settingsModal.onclick = (e)=>{ if(e.target===settingsModal) settingsModal.classList.remove('show'); };
+
+const chartModeModal = document.getElementById('wz-chart-mode-modal');
+document.getElementById('wz-chart-mode-btn').onclick = ()=>{
+  settingsModal.classList.remove('show');
+  chartModeModal.classList.add('show');
+};
+document.getElementById('wz-chart-mode-modal-close').onclick = ()=> chartModeModal.classList.remove('show');
+chartModeModal.onclick = (e)=>{ if(e.target===chartModeModal) chartModeModal.classList.remove('show'); };
+chartModeModal.querySelectorAll('.wz-period-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    CHART_MODE = btn.dataset.mode;
+    try{ localStorage.setItem('wz-chart-mode', CHART_MODE); }catch(e){}
+    chartModeModal.classList.remove('show');
+    renderChart();
+    toast(CHART_MODE==='daily' ? "Graphique journalier activé" : "Graphique cumulatif activé");
+  };
+});
 
 const codeModal = document.getElementById('wz-code-modal');
 document.getElementById('wz-code-settings-btn').onclick = ()=>{
