@@ -588,6 +588,18 @@ function niceMax(val){
   return niceNorm*magnitude;
 }
 
+function smoothAreaPath(pts, svgH, padB){
+  const baseline = svgH - padB;
+  const linePath = smoothPath(pts);
+  const first = pts[0], last = pts[pts.length-1];
+  return `${linePath} L${last[0].toFixed(2)},${baseline.toFixed(2)} L${first[0].toFixed(2)},${baseline.toFixed(2)} Z`;
+}
+function chartGlowDefs(id){
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="var(--signal)" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="var(--signal)" stop-opacity="0"/>
+  </linearGradient></defs>`;
+}
 function svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal){
   const plotW=svgW-padL-padR, plotH=svgH-padT-padB;
   const gridLines = [0,0.25,0.5,0.75,1].map(f=>{
@@ -650,9 +662,11 @@ function renderChartGlobal(trendEl, svgWrap, legendEl){
     }).join('');
 
     const pts = values.map((v,i)=>[xFor(i), yFor(v)]);
+    const gradId = 'wz-chart-glow-global-1';
+    const area = `<path d="${smoothAreaPath(pts, svgH, padB)}" fill="url(#${gradId})" stroke="none"/>`;
     const path = `<path d="${smoothPath(pts)}" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
-    svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${path}${xLabelsHtml}${yLabels}</svg>`;
+    svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${chartGlowDefs(gradId)}${gridLines}${area}${path}${xLabelsHtml}${yLabels}</svg>`;
     trendEl.className='';
     trendEl.textContent = '';
     return;
@@ -678,9 +692,11 @@ function renderChartGlobal(trendEl, svgWrap, legendEl){
   }).join('');
 
   const pts = values.map((v,i)=>[xFor(i), yFor(v)]);
+  const gradId = 'wz-chart-glow-global';
+  const area = `<path d="${smoothAreaPath(pts, svgH, padB)}" fill="url(#${gradId})" stroke="none"/>`;
   const path = `<path d="${smoothPath(pts)}" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
-  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${path}${xLabelsHtml}${yLabels}</svg>`;
+  svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${chartGlowDefs(gradId)}${gridLines}${area}${path}${xLabelsHtml}${yLabels}</svg>`;
 
   const todaysTotal = values[values.length-1] || 0;
   const yestTotal = values.length>1 ? values[values.length-2] : 0;
