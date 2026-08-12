@@ -187,14 +187,6 @@
   <div class="wz-goals" id="wz-goals"></div>
 
   <div class="wz-section-label">
-    <span>Vue globale — tous tickets</span>
-    <span id="wz-chart-global-trend" style="font-family:'JetBrains Mono',monospace;"></span>
-  </div>
-  <div class="wz-chart-wrap">
-    <div id="wz-chart-global-svg"></div>
-  </div>
-
-  <div class="wz-section-label">
     <span id="wz-chart-trend" style="font-family:'JetBrains Mono',monospace;"></span>
   </div>
   <div class="wz-chart-wrap">
@@ -241,6 +233,7 @@
   <div class="wz-modal-panel">
     <div class="wz-modal-head"><div class="wz-modal-title">Type de graphique</div><button class="wz-modal-close" id="wz-chart-mode-modal-close">✕</button></div>
     <div class="wz-modal-body">
+      <button class="wz-period-btn" data-mode="global">Vue globale <span style="color:var(--muted);font-weight:400;">— tous les tickets confondus, par jour</span></button>
       <button class="wz-period-btn" data-mode="daily">Journalier <span style="color:var(--muted);font-weight:400;">— repart à zéro chaque jour</span></button>
       <button class="wz-period-btn" data-mode="cumulative">Cumulatif <span style="color:var(--muted);font-weight:400;">— s'accumule du 1er au dernier jour</span></button>
       <button class="wz-period-btn" data-mode="weekcompare">Semaine vs semaine <span style="color:var(--muted);font-weight:400;">— compare à la semaine dernière</span></button>
@@ -610,24 +603,20 @@ function svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal){
 }
 
 function renderChart(){
-  renderChartGlobal();
-
   const trendEl = document.getElementById('wz-chart-trend');
   const svgWrap = document.getElementById('wz-chart-svg');
   const legendEl = document.getElementById('wz-chart-legend');
 
+  if(CHART_MODE==='global') return renderChartGlobal(trendEl, svgWrap, legendEl);
   if(CHART_MODE==='weekcompare') return renderChartWeekCompare(trendEl, svgWrap, legendEl);
   if(CHART_MODE==='hourly') return renderChartHourly(trendEl, svgWrap, legendEl);
   if(CHART_MODE==='breakdown') return renderChartBreakdown(trendEl, svgWrap, legendEl);
   return renderChartTrend(trendEl, svgWrap, legendEl);
 }
 
-// Vue globale : tous les tickets confondus, jour par jour, repart à zéro chaque jour.
-// Toujours visible au-dessus des autres graphiques, indépendamment du "Type de graphique" choisi.
-function renderChartGlobal(){
-  const trendEl = document.getElementById('wz-chart-global-trend');
-  const svgWrap = document.getElementById('wz-chart-global-svg');
-  if(!trendEl || !svgWrap) return;
+// Vue globale : tous les tickets confondus, jour par jour, repart à zéro chaque jour (comme "Journalier" mais sans distinction de tarif).
+function renderChartGlobal(trendEl, svgWrap, legendEl){
+  if(legendEl) legendEl.innerHTML = '';
 
   const now = simNow();
   const daysInMonthSoFar = now.getDate();
@@ -692,8 +681,8 @@ function renderChartGlobal(){
   const todaysTotal = values[values.length-1] || 0;
   const yestTotal = values.length>1 ? values[values.length-2] : 0;
   trendEl.className='';
-  if(todaysTotal===0 && yestTotal===0){ trendEl.textContent=''; }
-  else if(yestTotal===0){ trendEl.textContent='📈 nouvelle activité'; trendEl.className='up'; }
+  if(todaysTotal===0 && yestTotal===0){ trendEl.textContent='Pas encore assez de données'; }
+  else if(yestTotal===0){ trendEl.textContent='📈 Nouvelle activité'; trendEl.className='up'; }
   else{
     const pct = Math.round(((todaysTotal-yestTotal)/yestTotal)*100);
     trendEl.textContent = (pct>=0?'📈 +':'📉 ')+pct+'% vs hier';
@@ -1013,7 +1002,7 @@ chartModeModal.querySelectorAll('.wz-period-btn').forEach(btn=>{
     try{ localStorage.setItem('wz-chart-mode', CHART_MODE); }catch(e){}
     chartModeModal.classList.remove('show');
     renderChart();
-    const modeLabels = {cumulative:"Graphique cumulatif activé", daily:"Graphique journalier activé", weekcompare:"Comparaison semaine vs semaine activée", hourly:"Vue par heure activée", breakdown:"Répartition par tarif activée"};
+    const modeLabels = {global:"Vue globale activée", cumulative:"Graphique cumulatif activé", daily:"Graphique journalier activé", weekcompare:"Comparaison semaine vs semaine activée", hourly:"Vue par heure activée", breakdown:"Répartition par tarif activée"};
     toast(modeLabels[CHART_MODE] || "Graphique mis à jour");
   };
 });
