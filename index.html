@@ -596,8 +596,8 @@ function smoothAreaPath(pts, svgH, padB){
 }
 function chartGlowDefs(id){
   return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="var(--signal)" stop-opacity="0.35"/>
-    <stop offset="100%" stop-color="var(--signal)" stop-opacity="0"/>
+    <stop offset="0%" stop-color="#EC4899" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="#EC4899" stop-opacity="0"/>
   </linearGradient></defs>`;
 }
 function svgLineGrid(svgW,svgH,padL,padR,padT,padB,maxVal){
@@ -664,7 +664,7 @@ function renderChartGlobal(trendEl, svgWrap, legendEl){
     const pts = values.map((v,i)=>[xFor(i), yFor(v)]);
     const gradId = 'wz-chart-glow-global-1';
     const area = `<path d="${smoothAreaPath(pts, svgH, padB)}" fill="url(#${gradId})" stroke="none"/>`;
-    const path = `<path d="${smoothPath(pts)}" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const path = `<path d="${smoothPath(pts)}" fill="none" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
     svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${chartGlowDefs(gradId)}${gridLines}${area}${path}${xLabelsHtml}${yLabels}</svg>`;
     trendEl.className='';
@@ -694,7 +694,7 @@ function renderChartGlobal(trendEl, svgWrap, legendEl){
   const pts = values.map((v,i)=>[xFor(i), yFor(v)]);
   const gradId = 'wz-chart-glow-global';
   const area = `<path d="${smoothAreaPath(pts, svgH, padB)}" fill="url(#${gradId})" stroke="none"/>`;
-  const path = `<path d="${smoothPath(pts)}" fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const path = `<path d="${smoothPath(pts)}" fill="none" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
   svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${chartGlowDefs(gradId)}${gridLines}${area}${path}${xLabelsHtml}${yLabels}</svg>`;
 
