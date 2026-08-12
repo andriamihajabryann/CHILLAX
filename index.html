@@ -626,12 +626,16 @@ function renderChartGlobal(trendEl, svgWrap, legendEl){
   let labels, xLabelsHtml, xFor, values;
 
   if(isFirstDay){
-    // 1er du mois : zoom par heure, comme les autres vues dans ce cas.
+    // 1er du mois : vue par heure, en cumulatif pour garder une courbe continue (pas de retour à zéro après une vente).
     const monthDayStr = localDateStr(now);
     labels = [];
     for(let h=HOUR_START; h<=HOUR_END; h++) labels.push(h);
     const daySales = sales.filter(s=>localDateStr(new Date(s.ts))===monthDayStr);
-    values = labels.map(h=> daySales.filter(s=> new Date(s.ts).getHours()===h).reduce((a,s)=>a+s.amount,0));
+    let cum = 0;
+    values = labels.map(h=>{
+      cum += daySales.filter(s=> new Date(s.ts).getHours()===h).reduce((a,s)=>a+s.amount,0);
+      return cum;
+    });
 
     const maxVal = niceMax(Math.max(1, ...values));
     const svgW=600, svgH=190, padL=34, padR=8, padT=10, padB=20;
@@ -650,7 +654,7 @@ function renderChartGlobal(trendEl, svgWrap, legendEl){
 
     svgWrap.innerHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;display:block;">${gridLines}${path}${xLabelsHtml}${yLabels}</svg>`;
     trendEl.className='';
-    trendEl.textContent = '🔍 1er du mois — zoom heures';
+    trendEl.textContent = '';
     return;
   }
 
