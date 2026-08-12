@@ -365,6 +365,10 @@ function colorForLabel(label){ const t = TARIFS.find(x=>x.label===label); return
 function fmt(n){ return n.toLocaleString('fr-FR').replace(/,/g,' ') + " Ar"; }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function monthStr(){ return new Date().toISOString().slice(0,7); }
+function localDateStr(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function startOfWeekISO(){
   const d = new Date(); const day = d.getDay();
   const diff = (day===0?-6:1) - day;
@@ -465,6 +469,9 @@ onSnapshot(goalsDocRef, (snap)=>{
 
 window.addEventListener('online', ()=>{ syncDot.classList.remove('offline'); });
 window.addEventListener('offline', ()=>{ syncDot.classList.remove('loading'); syncDot.classList.add('offline'); });
+
+// Rafraîchit l'affichage chaque minute pour que le graphique avance seul (changement de jour, etc.)
+setInterval(()=>{ if(rootEl.style.display!=='none') render(); }, 60000);
 
 function render(){
   const today = todayStr(), month = monthStr(), weekStart = startOfWeekISO();
@@ -618,19 +625,22 @@ function renderChartTrend(trendEl, svgWrap, legendEl){
 }
 
 function renderChartWeekCompare(trendEl, svgWrap, legendEl){
-  const weekStart = new Date(startOfWeekISO());
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = (day===0?-6:1) - day;
+  const weekStart = new Date(now); weekStart.setDate(weekStart.getDate()+diffToMonday); weekStart.setHours(0,0,0,0);
   const prevWeekStart = new Date(weekStart); prevWeekStart.setDate(prevWeekStart.getDate()-7);
-  const todayIndex = (new Date().getDay()+6)%7; // lundi=0 ... dimanche=6
+  const todayIndex = (day+6)%7; // lundi=0 ... dimanche=6
 
   const dayNames = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   const thisWeekVals = [], prevWeekVals = [];
   for(let i=0;i<7;i++){
     const dThis = new Date(weekStart); dThis.setDate(dThis.getDate()+i);
     const dPrev = new Date(prevWeekStart); dPrev.setDate(dPrev.getDate()+i);
-    const dThisStr = dThis.toISOString().slice(0,10);
-    const dPrevStr = dPrev.toISOString().slice(0,10);
-    thisWeekVals.push(i<=todayIndex ? sales.filter(s=>s.ts.slice(0,10)===dThisStr).reduce((a,s)=>a+s.amount,0) : null);
-    prevWeekVals.push(sales.filter(s=>s.ts.slice(0,10)===dPrevStr).reduce((a,s)=>a+s.amount,0));
+    const dThisStr = localDateStr(dThis);
+    const dPrevStr = localDateStr(dPrev);
+    thisWeekVals.push(i<=todayIndex ? sales.filter(s=>localDateStr(new Date(s.ts))===dThisStr).reduce((a,s)=>a+s.amount,0) : null);
+    prevWeekVals.push(sales.filter(s=>localDateStr(new Date(s.ts))===dPrevStr).reduce((a,s)=>a+s.amount,0));
   }
 
   const maxVal = Math.max(1, ...thisWeekVals.filter(v=>v!==null), ...prevWeekVals);
