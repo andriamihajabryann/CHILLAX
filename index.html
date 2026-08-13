@@ -528,7 +528,6 @@ function tryUnlock(){
   if(lockInput.value === APP_CODE){
     lockEl.style.display = 'none';
     rootEl.style.display = 'block';
-    rootEl.classList.add('wz-animate-in');
     try{ localStorage.setItem('wz-unlocked', '1'); }catch(e){}
   } else {
     lockError.textContent = "Code incorrect";
@@ -543,7 +542,6 @@ try{ alreadyUnlocked = localStorage.getItem('wz-unlocked') === '1'; }catch(e){}
 if(alreadyUnlocked){
   lockEl.style.display = 'none';
   rootEl.style.display = 'block';
-  rootEl.classList.add('wz-animate-in');
 } else {
   lockInput.focus();
 }
@@ -616,7 +614,7 @@ setInterval(()=>{ if(rootEl.style.display!=='none') render(); }, 60000);
 
 // --- Motion design : compteur qui "monte" de 0 vers la valeur finale, avec un vrai rebond physique ---
 function animateCount(el, target, opts){
-  const {duration=1000, prefix='', suffix='', formatter} = opts||{};
+  const {duration=1000, prefix='', suffix='', formatter, easing='spring'} = opts||{};
   const startVal = 0;
   const startTime = performance.now();
   // Spring-like easing : dépasse légèrement la cible puis revient se stabiliser (inertie réelle, pas d'arrêt sec)
@@ -626,9 +624,12 @@ function animateCount(el, target, opts){
     if(x===1) return 1;
     return Math.pow(2,-9*x) * Math.sin((x*8-0.75)*c4) + 1;
   }
+  // Progression régulière du début à la fin, sans montée rapide ni palier (pour les compteurs longs, ex. %)
+  function easeOutCubic(x){ return 1 - Math.pow(1-x, 3); }
+  const ease = easing==='linear' ? easeOutCubic : easeSpring;
   function tick(now){
     const p = Math.min((now-startTime)/duration, 1);
-    const eased = easeSpring(p);
+    const eased = ease(p);
     const val = Math.max(0, Math.round(startVal + (target-startVal)*eased));
     el.textContent = formatter ? formatter(val) : (prefix+val+suffix);
     if(p<1) requestAnimationFrame(tick);
@@ -722,7 +723,7 @@ function render(){
     animateCount(monthEl, monthTotal, {formatter: v=>fmt(v)});
     if(remain===0){ remainEl.textContent = "Objectif atteint"; }
     else{ animateCount(remainEl, remain, {formatter: v=>fmt(v)}); }
-    animateCount(pctEl, Math.round(pct*100), {suffix:'%', duration:1680});
+    animateCount(pctEl, Math.round(pct*100), {suffix:'%', duration:1680, easing:'linear'});
   } else {
     todayEl.textContent = fmt(todayTotal);
     weekEl.textContent = fmt(weekTotal);
