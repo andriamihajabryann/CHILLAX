@@ -580,6 +580,16 @@ async function undoLast(){
 const syncDot = document.getElementById('wz-sync-dot');
 let sales = [];
 
+// Le tout premier rendu animé n'a lieu qu'une fois que ventes ET objectifs sont arrivés,
+// pour ne jamais interrompre l'animation d'entrée par un second rendu qui recrée le DOM.
+let salesReady = false, goalsReady = false;
+function maybeFirstRender(){
+  if(wzFirstRender && (!salesReady || !goalsReady)) return; // attend les deux flux
+  render();
+}
+// Filet de sécurité : si un flux ne répond jamais (ex. hors-ligne), affiche quand même après 2s
+setTimeout(()=>{ if(wzFirstRender){ salesReady = true; goalsReady = true; maybeFirstRender(); } }, 2000);
+
 const q = query(salesCol, orderBy("ts","desc"));
 onSnapshot(q, (snap)=>{
   sales = snap.docs.map(d=>{
@@ -588,7 +598,8 @@ onSnapshot(q, (snap)=>{
   });
   lastSaleId = sales.length ? sales[0].id : null;
   syncDot.classList.remove('offline','loading');
-  render();
+  salesReady = true;
+  maybeFirstRender();
 }, (err)=>{
   syncDot.classList.remove('loading');
   syncDot.classList.add('offline');
@@ -602,8 +613,9 @@ onSnapshot(goalsDocRef, (snap)=>{
   if(snap.exists()){
     const d = snap.data();
     GOALS = { day: d.day||10000, week: d.week||50000, month: d.month||200000 };
-    render();
   }
+  goalsReady = true;
+  maybeFirstRender();
 }, ()=>{});
 
 window.addEventListener('online', ()=>{ syncDot.classList.remove('offline'); });
