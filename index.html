@@ -197,10 +197,8 @@
   .wz-animate-in{ animation:wz-in .5s cubic-bezier(.16,.9,.32,1) both; }
   .wz-animate-pop{ animation:wz-pop .55s cubic-bezier(.2,.85,.35,1.1) both; }
 
-  /* L'anneau se dessine du vide vers sa valeur (le JS anime stroke-dashoffset séparément,
-     ceci gère juste l'apparition douce du tracé + de son centre) */
+  /* L'anneau se dessine du vide vers sa valeur, avec un léger dépassement/rebond géré en JS (voir animateArc) */
   .wz-arc-wrap{ opacity:0; animation:wz-in .5s cubic-bezier(.16,.9,.32,1) both; animation-delay:.05s; }
-  #wz-arc-fg{ transition:stroke-dashoffset 1.1s cubic-bezier(.22,.9,.28,1), stroke .3s ease; }
 
   .wz-hero-stats .wz-stat-row{ opacity:0; animation:wz-in .45s cubic-bezier(.16,.9,.32,1) both; }
   .wz-hero-stats .wz-stat-row:nth-child(1){ animation-delay:.10s; }
@@ -208,7 +206,7 @@
   .wz-hero-stats .wz-stat-row:nth-child(3){ animation-delay:.22s; }
   .wz-hero-stats .wz-stat-row:nth-child(4){ animation-delay:.28s; }
 
-  .wz-goal-bar-fg{ transition:width 1s cubic-bezier(.22,.9,.28,1); }
+  .wz-goal-bar-fg{ transition:width .3s ease; }
 
   .wz-tarif-btn.wz-animate-in:nth-child(1){ animation-delay:.05s; }
   .wz-tarif-btn.wz-animate-in:nth-child(2){ animation-delay:.10s; }
@@ -615,16 +613,22 @@ window.addEventListener('offline', ()=>{ syncDot.classList.remove('loading'); sy
 // Rafraîchit l'affichage chaque minute pour que le graphique avance seul (changement de jour, etc.)
 setInterval(()=>{ if(rootEl.style.display!=='none') render(); }, 60000);
 
-// --- Motion design : compteur qui "monte" de 0 vers la valeur finale ---
+// --- Motion design : compteur qui "monte" de 0 vers la valeur finale, avec un vrai rebond physique ---
 function animateCount(el, target, opts){
-  const {duration=900, prefix='', suffix='', formatter} = opts||{};
+  const {duration=1000, prefix='', suffix='', formatter} = opts||{};
   const startVal = 0;
   const startTime = performance.now();
-  const easeOutExpo = x => x===1 ? 1 : 1-Math.pow(2,-9*x);
+  // Spring-like easing : dépasse légèrement la cible puis revient se stabiliser (inertie réelle, pas d'arrêt sec)
+  function easeSpring(x){
+    const c4 = (2*Math.PI)/3.2;
+    if(x===0) return 0;
+    if(x===1) return 1;
+    return Math.pow(2,-9*x) * Math.sin((x*8-0.75)*c4) + 1;
+  }
   function tick(now){
     const p = Math.min((now-startTime)/duration, 1);
-    const eased = easeOutExpo(p);
-    const val = Math.round(startVal + (target-startVal)*eased);
+    const eased = easeSpring(p);
+    const val = Math.max(0, Math.round(startVal + (target-startVal)*eased));
     el.textContent = formatter ? formatter(val) : (prefix+val+suffix);
     if(p<1) requestAnimationFrame(tick);
     else el.textContent = formatter ? formatter(target) : (prefix+target+suffix);
@@ -632,6 +636,65 @@ function animateCount(el, target, opts){
   requestAnimationFrame(tick);
 }
 let wzFirstRender = true;
+
+// --- Motion design : anime tout SVG de graphique fraîchement injecté, du "vide" vers son état réel ---
+function animateChartSvg(svgWrap){
+  if(!svgWrap) return;
+  const svg = svgWrap.querySelector('svg');
+  if(!svg) return;
+
+  // Courbes / aires : se dessinent comme tracées à la main (stroke qui se révèle)
+  svg.querySelectorAll('path[stroke]:not([stroke="none"])').forEach((path, i)=>{
+    try{
+      const len = path.getTotalLength();
+      if(!len || !isFinite(len)) return;
+      path.style.transition = 'none';
+      path.style.strokeDasharray = len;
+      path.style.strokeDashoffset = len;
+      path.getBoundingClientRect(); // force reflow
+      path.style.transition = `stroke-dashoffset 900ms cubic-bezier(.22,.9,.28,1) ${i*60}ms`;
+      requestAnimationFrame(()=>{ path.style.strokeDashoffset = '0'; });
+    }catch(e){}
+  });
+
+  // Aires remplies : fade-in doux (le tracé du dessus donne déjà le mouvement)
+  svg.querySelectorAll('path[fill]:not([fill="none"])').forEach((path, i)=>{
+    path.style.transition = 'none';
+    path.style.opacity = '0';
+    path.getBoundingClientRect();
+    path.style.transition = `opacity 700ms ease ${200+i*40}ms`;
+    requestAnimationFrame(()=>{ path.style.opacity = '1'; });
+  });
+
+  // Points de données : apparaissent avec un léger rebond, en cascade
+  svg.querySelectorAll('circle').forEach((c, i)=>{
+    c.style.transformOrigin = 'center';
+    c.style.transformBox = 'fill-box';
+    c.style.transition = 'none';
+    c.style.transform = 'scale(0)';
+    c.style.opacity = '0';
+    c.getBoundingClientRect();
+    c.style.transition = `transform 450ms cubic-bezier(.34,1.56,.64,1) ${300+i*25}ms, opacity 300ms ease ${300+i*25}ms`;
+    requestAnimationFrame(()=>{ c.style.transform = 'scale(1)'; c.style.opacity = '1'; });
+  });
+
+  // Barres : montent depuis leur base (comme les objectifs), avec un petit rebond à l'arrivée
+  svg.querySelectorAll('rect').forEach((rect, i)=>{
+    const h = parseFloat(rect.getAttribute('height'));
+    const y = parseFloat(rect.getAttribute('y'));
+    if(!isFinite(h) || !isFinite(y) || h<=0) return;
+    const baseline = y + h;
+    rect.style.transition = 'none';
+    rect.setAttribute('height', '0');
+    rect.setAttribute('y', baseline);
+    rect.getBoundingClientRect();
+    rect.style.transition = `height 650ms cubic-bezier(.22,.9,.28,1) ${i*45}ms, y 650ms cubic-bezier(.22,.9,.28,1) ${i*45}ms`;
+    requestAnimationFrame(()=>{
+      rect.setAttribute('height', h);
+      rect.setAttribute('y', y);
+    });
+  });
+}
 
 function render(){
   const today = todayStr(), month = monthStr(), weekStart = startOfWeekISO();
@@ -670,20 +733,34 @@ function render(){
   const circumference = 301.6;
   const arc = document.getElementById('wz-arc-fg');
   if(wzFirstRender){
-    // Part de zéro visuellement puis se déroule vers sa valeur (transition CSS déjà posée sur #wz-arc-fg)
+    // Part de zéro, dépasse légèrement sa cible puis revient s'y stabiliser — effet ressort, pas un arrêt sec
+    arc.style.transition = 'none';
     arc.setAttribute('stroke-dashoffset', circumference);
+    arc.getBoundingClientRect();
+    const targetOffset = circumference*(1-pct);
+    const overshootPct = Math.min(pct + 0.035, 1);
+    const overshootOffset = circumference*(1-overshootPct);
     requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        arc.setAttribute('stroke-dashoffset', circumference*(1-pct));
-      });
+      arc.style.transition = 'stroke-dashoffset 850ms cubic-bezier(.22,.9,.15,1)';
+      arc.setAttribute('stroke-dashoffset', overshootOffset);
+      setTimeout(()=>{
+        arc.style.transition = 'stroke-dashoffset 260ms ease-out';
+        arc.setAttribute('stroke-dashoffset', targetOffset);
+      }, 850);
     });
   } else {
+    arc.style.transition = 'stroke-dashoffset .3s ease';
     arc.setAttribute('stroke-dashoffset', circumference*(1-pct));
   }
   arc.setAttribute('stroke', pct>=1 ? 'var(--amber)' : 'var(--signal)');
 
   renderGoals(todayTotal, weekTotal, monthTotal);
   renderChart();
+  if(wzFirstRender){
+    const svgWrap = document.getElementById('wz-chart-svg');
+    // Laisse le temps au HTML du graphique d'être posé dans le DOM avant de mesurer les tracés
+    requestAnimationFrame(()=> animateChartSvg(svgWrap));
+  }
 
   const logEl = document.getElementById('wz-log');
   if(todaySales.length===0){
@@ -739,7 +816,15 @@ function renderGoals(todayTotal, weekTotal, monthTotal){
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
         el.querySelectorAll('.wz-goal-bar-fg').forEach(bar=>{
-          bar.style.width = bar.dataset.finalWidth;
+          const finalW = bar.dataset.finalWidth;
+          const finalNum = parseFloat(finalW);
+          const overshootW = Math.min(finalNum + (finalNum>0?4:0), 100)+'%';
+          bar.style.transition = 'width 750ms cubic-bezier(.22,.9,.15,1)';
+          bar.style.width = finalNum>0 ? overshootW : finalW;
+          setTimeout(()=>{
+            bar.style.transition = 'width 220ms ease-out';
+            bar.style.width = finalW;
+          }, 750);
         });
       });
     });
