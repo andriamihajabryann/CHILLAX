@@ -197,8 +197,9 @@
   .wz-animate-in{ animation:wz-in .5s cubic-bezier(.16,.9,.32,1) both; }
   .wz-animate-pop{ animation:wz-pop .55s cubic-bezier(.2,.85,.35,1.1) both; }
 
-  /* L'anneau se dessine du vide vers sa valeur, avec un léger dépassement/rebond géré en JS (voir animateArc) */
-  .wz-arc-wrap{ opacity:0; animation:wz-in .5s cubic-bezier(.16,.9,.32,1) both; animation-delay:.05s; }
+  /* Le conteneur de la jauge reste visible en permanence (cercle vide au départ) ;
+     seul l'anneau de progression s'anime, géré en JS (voir animateArc) */
+  .wz-arc-wrap{ opacity:1; }
 
   .wz-hero-stats .wz-stat-row{ opacity:0; animation:wz-in .45s cubic-bezier(.16,.9,.32,1) both; }
   .wz-hero-stats .wz-stat-row:nth-child(1){ animation-delay:.10s; }
@@ -218,7 +219,7 @@
   .wz-sync-dot.loading{ animation:wz-dot-pulse 1s ease-in-out infinite; }
 
   @media (prefers-reduced-motion: reduce){
-    .wz-animate-in, .wz-animate-pop, .wz-arc-wrap{ animation:none !important; opacity:1 !important; transform:none !important; }
+    .wz-animate-in, .wz-animate-pop{ animation:none !important; opacity:1 !important; transform:none !important; }
     #wz-arc-fg, .wz-goal-bar-fg{ transition:none !important; }
   }
 
@@ -721,7 +722,7 @@ function render(){
     animateCount(monthEl, monthTotal, {formatter: v=>fmt(v)});
     if(remain===0){ remainEl.textContent = "Objectif atteint"; }
     else{ animateCount(remainEl, remain, {formatter: v=>fmt(v)}); }
-    animateCount(pctEl, Math.round(pct*100), {suffix:'%'});
+    animateCount(pctEl, Math.round(pct*100), {suffix:'%', duration:1680});
   } else {
     todayEl.textContent = fmt(todayTotal);
     weekEl.textContent = fmt(weekTotal);
@@ -741,12 +742,12 @@ function render(){
     const overshootPct = Math.min(pct + 0.035, 1);
     const overshootOffset = circumference*(1-overshootPct);
     requestAnimationFrame(()=>{
-      arc.style.transition = 'stroke-dashoffset 850ms cubic-bezier(.22,.9,.15,1)';
+      arc.style.transition = 'stroke-dashoffset 1300ms cubic-bezier(.22,.9,.15,1)';
       arc.setAttribute('stroke-dashoffset', overshootOffset);
       setTimeout(()=>{
-        arc.style.transition = 'stroke-dashoffset 260ms ease-out';
+        arc.style.transition = 'stroke-dashoffset 380ms ease-out';
         arc.setAttribute('stroke-dashoffset', targetOffset);
-      }, 850);
+      }, 1300);
     });
   } else {
     arc.style.transition = 'stroke-dashoffset .3s ease';
