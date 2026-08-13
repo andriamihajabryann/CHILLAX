@@ -47,7 +47,6 @@
   html[data-theme="light"] .wz-logo-dark{ display:none; }
   html[data-theme="light"] .wz-logo-light{ display:block; }
   .wz-brand-row{ display:flex; align-items:center; gap:8px; }
-  .wz-theme-toggle{ background:var(--surface-2); border:1px solid var(--border); color:var(--text); font-size:13px; cursor:pointer; padding:5px 8px; border-radius:8px; line-height:1; display:flex; align-items:center; justify-content:center; }
 
   .wz-hero{ display:flex; align-items:center; gap:18px; padding:22px; background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);}
   .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none;}
@@ -210,12 +209,9 @@
         <span class="wz-sync-dot loading" id="wz-sync-dot"></span>
       </div>
     </div>
-    <div style="text-align:right; display:flex; align-items:center; gap:8px;">
-      <button class="wz-theme-toggle" id="wz-theme-toggle" title="Changer de thème">🌙</button>
-      <div style="text-align:right;">
-        <div class="wz-date" id="wz-date"></div>
-        <button id="wz-settings-btn">⚙</button>
-      </div>
+    <div style="text-align:right;">
+      <div class="wz-date" id="wz-date"></div>
+      <button id="wz-settings-btn">⚙</button>
     </div>
   </div>
 
@@ -293,6 +289,7 @@
       <button class="wz-period-btn" id="wz-code-settings-btn">🔑 Code de l'app</button>
       <button class="wz-period-btn" id="wz-backdate-btn">🕐 Date antérieure</button>
       <button class="wz-period-btn" id="wz-chart-mode-btn">📊 Type de graphique</button>
+      <button class="wz-period-btn" id="wz-theme-toggle">🌙 Mode sombre</button>
     </div>
   </div>
 </div>
@@ -442,7 +439,7 @@ function applyTheme(theme){
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.setAttribute('content', theme==='light' ? '#F5F7FA' : '#0F1521');
   const btn = document.getElementById('wz-theme-toggle');
-  if(btn) btn.textContent = theme==='light' ? '🌙' : '☀️';
+  if(btn) btn.textContent = theme==='light' ? '🌙 Mode sombre' : '☀️ Mode clair';
 }
 let THEME = 'light';
 try{ THEME = localStorage.getItem('wz-theme') || 'light'; }catch(e){}
