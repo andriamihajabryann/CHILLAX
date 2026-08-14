@@ -47,6 +47,17 @@
   html[data-theme="light"] .wz-logo-dark{ display:none; }
   html[data-theme="light"] .wz-logo-light{ display:block; }
   .wz-brand-row{ display:flex; align-items:center; gap:8px; }
+  .wz-logo-big{ height:44px; }
+  .wz-header-brand{ padding-bottom:6px; border-bottom:none; }
+
+  .wz-weekstrip{ display:flex; justify-content:space-between; padding:8px 22px 18px; gap:4px; }
+  .wz-weekday{ display:flex; flex-direction:column; align-items:center; gap:8px; background:none; border:none; cursor:pointer; font-family:'Inter',sans-serif; padding:0; flex:1; }
+  .wz-weekday-label{ font-size:13px; color:var(--muted); }
+  .wz-weekday-num{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; color:var(--text); width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:50%; position:relative; }
+  .wz-weekday.today .wz-weekday-label{ color:var(--signal); font-weight:600; }
+  .wz-weekday.selected .wz-weekday-num{ background:var(--signal); color:#0F1521; }
+  .wz-weekday-dot{ width:5px; height:5px; border-radius:50%; background:var(--amber); position:absolute; bottom:-9px; left:50%; transform:translateX(-50%); }
+  .wz-weekday.future{ opacity:0.35; cursor:default; }
 
   .wz-hero{ display:flex; align-items:center; gap:18px; padding:22px; background:radial-gradient(120% 100% at 0% 0%, rgba(94,234,212,0.06), transparent 60%);}
   .wz-arc-wrap{ position:relative; width:112px; height:112px; flex:none;}
@@ -244,19 +255,21 @@
 </div>
 
 <div id="wz-root" style="display:none;">
-  <div class="wz-header">
+  <div class="wz-header wz-header-brand">
     <div>
       <div class="wz-brand-row">
-        <img src="logo.png" alt="Chill" class="wz-logo wz-logo-dark">
-        <img src="logo-light.png" alt="Chill" class="wz-logo wz-logo-light">
+        <img src="logo.png" alt="Chill" class="wz-logo wz-logo-dark wz-logo-big">
+        <img src="logo-light.png" alt="Chill" class="wz-logo wz-logo-light wz-logo-big">
         <span class="wz-sync-dot loading" id="wz-sync-dot"></span>
       </div>
     </div>
-    <div style="text-align:right;">
+    <div style="text-align:right; display:none;">
       <div class="wz-date" id="wz-date"></div>
       <button id="wz-settings-btn">⚙</button>
     </div>
   </div>
+
+  <div class="wz-weekstrip" id="wz-weekstrip"></div>
 
   <div id="wz-sim-banner" style="display:none; align-items:center; justify-content:space-between; gap:10px; padding:10px 22px; background:var(--amber-dim); border-bottom:1px solid var(--amber);">
     <span style="font-size:12px; color:var(--amber); font-weight:600;">👁 <span id="wz-sim-banner-date"></span> — lecture seule</span>
@@ -1586,6 +1599,43 @@ exportModal.querySelectorAll('.wz-period-btn').forEach(btn=>{
     exportModal.classList.remove('show');
   };
 });
+
+// --- Barre calendrier semaine ---
+const WEEKDAY_LABELS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const weekstripEl = document.getElementById('wz-weekstrip');
+function renderWeekstrip(){
+  const realTodayStr = new Date().toISOString().slice(0,10);
+  const selectedStr = todayStr();
+  const start = new Date(startOfWeekISO());
+  weekstripEl.innerHTML = '';
+  for(let i=0;i<7;i++){
+    const d = new Date(start.getTime());
+    d.setDate(start.getDate()+i);
+    const dStr = localDateStr(d);
+    const isRealToday = dStr === realTodayStr;
+    const isSelected = dStr === selectedStr;
+    const isFuture = dStr > realTodayStr;
+    const hasSales = sales.some(s=>s.ts.slice(0,10)===dStr);
+
+    const btn = document.createElement('button');
+    btn.className = 'wz-weekday' + (isRealToday?' today':'') + (isSelected?' selected':'') + (isFuture?' future':'');
+    btn.innerHTML = `
+      <span class="wz-weekday-label">${WEEKDAY_LABELS[i]}</span>
+      <span class="wz-weekday-num">${d.getDate()}${hasSales?'<span class="wz-weekday-dot"></span>':''}</span>
+    `;
+    if(!isFuture){
+      btn.onclick = ()=>{
+        if(dStr === realTodayStr) exitSimMode();
+        else enterSimMode(dStr);
+        renderWeekstrip();
+      };
+    }
+    weekstripEl.appendChild(btn);
+  }
+}
+const _origRender = render;
+render = function(...args){ _origRender.apply(this,args); renderWeekstrip(); };
+renderWeekstrip();
 
 // --- Mode simulation (visualiser un jour passé en lecture seule) ---
 const simBanner = document.getElementById('wz-sim-banner');
